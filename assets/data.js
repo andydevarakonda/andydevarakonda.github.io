@@ -24,8 +24,8 @@ window.SITE_DATA = {
   },
   "qd-visible": {
    "project": "qd",
-   "alt": "The same quantum-dot vials under room light, shifting from colourless to orange-red",
-   "caption": "Same samples under visible light: colourless at 8 s, orange-red by 10 min.",
+   "alt": "The same quantum-dot vials under room light, shifting from colorless to orange-red",
+   "caption": "Same samples under visible light: colorless at 8 s, orange-red by 10 min.",
    "kind": "photo",
    "group": null,
    "width": 2400,
@@ -87,8 +87,8 @@ window.SITE_DATA = {
   },
   "qd-pl": {
    "project": "qd",
-   "alt": "Normalised photoluminescence spectra shifting right with reaction time",
-   "caption": "Photoluminescence red-shifts with reaction time: 436.33 nm to 582.49 nm.",
+   "alt": "Normalized photoluminescence spectra shifting right with reaction time",
+   "caption": "Photoluminescence red-shifts with reaction time: 431.26 to 563.23 nm (standard) and 436.33 to 582.49 nm (0.9 mL oleic acid).",
    "kind": "plot",
    "group": null,
    "width": 1430,
@@ -193,7 +193,7 @@ window.SITE_DATA = {
   "dsa-sem-a": {
    "project": "dsa",
    "alt": "SEM image of block copolymer self-assembly in a 20 nm trench",
-   "caption": "SEM (a) 20 nm trench. Single, perfectly straight cylinder row: width is commensurate with 0.5 L0.",
+   "caption": "SEM (a) 20 nm trench. Single, perfectly straight cylinder row: width is commensurate with 0.5 L₀.",
    "kind": "micro",
    "group": "sem",
    "width": 342,
@@ -273,7 +273,7 @@ window.SITE_DATA = {
   "dsa-sem-f": {
    "project": "dsa",
    "alt": "SEM image of block copolymer self-assembly in a 280 nm trench",
-   "caption": "SEM (f) 280 nm trench. Walls too far apart for global control: grain boundaries in the centre.",
+   "caption": "SEM (f) 280 nm trench. Walls too far apart for global control: grain boundaries in the center.",
    "kind": "micro",
    "group": "sem",
    "width": 342,
@@ -321,7 +321,7 @@ window.SITE_DATA = {
   "dsa-sem-i": {
    "project": "dsa",
    "alt": "SEM image of block copolymer self-assembly in a 240 nm well",
-   "caption": "SEM (i) 240 nm well. Thinnest film of any well (~36 nm): starved of polymer, domains become incomplete or distorted.",
+   "caption": "SEM (i) 240 nm well. Thinnest film of any well: starved of polymer, domains become incomplete or distorted.",
    "kind": "micro",
    "group": "sem",
    "width": 342,
@@ -337,7 +337,7 @@ window.SITE_DATA = {
   "dsa-afm-a": {
    "project": "dsa",
    "alt": "AFM height map of block copolymer self-assembly in a 20 nm trench",
-   "caption": "AFM (a) 20 nm trench. Single, perfectly straight cylinder row: width is commensurate with 0.5 L0.",
+   "caption": "AFM (a) 20 nm trench. Single, perfectly straight cylinder row: width is commensurate with 0.5 L₀.",
    "kind": "micro",
    "group": "afm",
    "width": 342,
@@ -417,7 +417,7 @@ window.SITE_DATA = {
   "dsa-afm-f": {
    "project": "dsa",
    "alt": "AFM height map of block copolymer self-assembly in a 280 nm trench",
-   "caption": "AFM (f) 280 nm trench. Walls too far apart for global control: grain boundaries in the centre.",
+   "caption": "AFM (f) 280 nm trench. Walls too far apart for global control: grain boundaries in the center.",
    "kind": "micro",
    "group": "afm",
    "width": 342,
@@ -465,7 +465,7 @@ window.SITE_DATA = {
   "dsa-afm-i": {
    "project": "dsa",
    "alt": "AFM height map of block copolymer self-assembly in a 240 nm well",
-   "caption": "AFM (i) 240 nm well. Thinnest film of any well (~36 nm): starved of polymer, domains become incomplete or distorted.",
+   "caption": "AFM (i) 240 nm well. Thinnest film of any well: starved of polymer, domains become incomplete or distorted.",
    "kind": "micro",
    "group": "afm",
    "width": 342,
@@ -481,7 +481,7 @@ window.SITE_DATA = {
   "dsa-process": {
    "project": "dsa",
    "alt": "Eight-step diagram of the graphoepitaxy process flow",
-   "caption": "Process: PECVD oxide, ZEP e-beam lithography at 100 kV, CF4 RIE, brush neutralisation, 240 °C anneal, UV + acetic-acid PMMA removal.",
+   "caption": "Process: PECVD oxide, ZEP e-beam lithography at 100 kV, CF₄ RIE, brush neutralization, 240 °C anneal, UV + acetic-acid PMMA removal.",
    "kind": "plot",
    "group": null,
    "width": 948,
@@ -523,7 +523,7 @@ window.SITE_DATA = {
   "dsa-thickness": {
    "project": "dsa",
    "alt": "Two plots of film thickness decreasing linearly with trench width and well diameter",
-   "caption": "Film thins as templates widen: down to ~49 nm in the widest trenches and ~36 nm in 240 nm wells.",
+   "caption": "Measured film thickness falls linearly as templates widen, in trenches (R² = 0.966) and wells (R² = 0.996): the same polymer volume spreads thinner.",
    "kind": "plot",
    "group": null,
    "width": 1150,
@@ -560,7 +560,7 @@ window.SITE_DATA = {
   "gfet-process": {
    "project": "gfet",
    "alt": "Fifteen-panel process cross-section for electrodes and graphene transfer",
-   "caption": "Bilayer-resist lithography, Cr/Au lift-off, PMMA-assisted electrochemical graphene transfer, O2 patterning, ALD Al2O3 cap.",
+   "caption": "Bilayer-resist lithography, Cr/Au lift-off, PMMA-assisted electrochemical graphene transfer, O₂ patterning, ALD Al₂O₃ cap.",
    "kind": "plot",
    "group": null,
    "width": 1418,
@@ -580,8 +580,8 @@ window.SITE_DATA = {
   },
   "gfet-pdms": {
    "project": "gfet",
-   "alt": "Six-panel process for the SU-8 mould and PDMS microfluidic channel",
-   "caption": "SU-8 mould, PDMS casting and vacuum bonding of the microfluidic channel over the graphene.",
+   "alt": "Six-panel process for the SU-8 mold and PDMS microfluidic channel",
+   "caption": "SU-8 mold, PDMS casting and vacuum bonding of the microfluidic channel over the graphene.",
    "kind": "plot",
    "group": null,
    "width": 1226,
@@ -622,8 +622,8 @@ window.SITE_DATA = {
   },
   "gfet-dirac": {
    "project": "gfet",
-   "alt": "Four transfer curves showing V-shaped Dirac minima at -2, 0, 19 and 3 volts",
-   "caption": "Transfer curves: Dirac points from −2 V to +19 V, traced to local PMMA and water residue rather than channel length.",
+   "alt": "Four transfer curves showing V-shaped Dirac minima at −2, 0, 19 and 3 volts",
+   "caption": "Transfer curves: Dirac points from −2 V to +19 V, traced to local PMMA and water residue rather than channel length. Channel lengths 10–500 µm (labeled nm in the original plot).",
    "kind": "plot",
    "group": null,
    "width": 1270,
@@ -644,7 +644,7 @@ window.SITE_DATA = {
   "gfet-ph-droplet": {
    "project": "gfet",
    "alt": "Resistance at pH 4, 7 and 10 for three channel lengths",
-   "caption": "Static-droplet pH test: high resistance at pH 4 (hole depletion), lower at pH 10 (hole accumulation).",
+   "caption": "Static-droplet pH test (shared class dataset): high resistance at pH 4 (hole depletion), lower at pH 10 (hole accumulation).",
    "kind": "plot",
    "group": null,
    "width": 1280,
@@ -802,7 +802,7 @@ window.SITE_DATA = {
   "mems-gds-piano": {
    "project": "mems",
    "alt": "GDS layout of horizontal cantilevers of increasing length",
-   "caption": "GDS: horizontal 'piano' cantilevers, 50–300 µm long, for resonance tests.",
+   "caption": "GDS: horizontal ‘piano’ cantilevers, 50–300 µm long, for resonance tests.",
    "kind": "ui",
    "group": null,
    "width": 628,
@@ -834,7 +834,7 @@ window.SITE_DATA = {
   "mems-deflection-cohorts": {
    "project": "mems",
    "alt": "Dot plot comparing cantilever deflection for 2018 and 2026 cohorts",
-   "caption": "Despite thinner beams (2.5 vs 3.8 µm), 2026 deflection is comparable to or lower than 2018: curl-induced gap expansion dominates.",
+   "caption": "Static deflection by cohort: 2018 (3.8 µm device layer) vs 2026 (2.5 µm).",
    "kind": "plot",
    "group": null,
    "width": 1344,
@@ -855,7 +855,7 @@ window.SITE_DATA = {
   "mems-static-deflection": {
    "project": "mems",
    "alt": "Static deflection versus voltage, measured against theory curves",
-   "caption": "Static deflection tracks CAD theory, far below the flat 2.5 µm prediction (black): the ~12 µm curl widens the gap and pushes pull-in beyond 272 V.",
+   "caption": "Static deflection tracks CAD theory, far below the flat 2.5 µm prediction (black): the ~12 µm curl widens the gap and pushes the estimated pull-in to ≈272 V.",
    "kind": "plot",
    "group": null,
    "width": 1626,
@@ -876,7 +876,7 @@ window.SITE_DATA = {
   "mems-resonance": {
    "project": "mems",
    "alt": "Resonant frequency falling with beam length, measured and theoretical",
-   "caption": "Resonance vs beam length: 21.3% average deviation from Euler-Bernoulli (vs <3.5% for the 2018 cohort).",
+   "caption": "Resonance vs beam length: 21.3% average deviation from Euler–Bernoulli (vs <3.5% for the 2018 cohort).",
    "kind": "plot",
    "group": null,
    "width": 1846,
@@ -1086,7 +1086,7 @@ window.SITE_DATA = {
   "tia-ac": {
    "project": "tia",
    "alt": "AC simulation of transimpedance gain falling off near 324 MHz",
-   "caption": "AC response: 160.9 kΩ transimpedance, −3 dB at 324 MHz, DC-coupled.",
+   "caption": "AC response: 107.1 dBΩ mid-band, 160.9 kΩ at the −3 dB corner (324 MHz); DC-coupled.",
    "kind": "ui",
    "group": null,
    "width": 1019,
@@ -1149,7 +1149,7 @@ window.SITE_DATA = {
   "tia-step": {
    "project": "tia",
    "alt": "Transient step response with minimal ringing",
-   "caption": "Step response: minimal ringing, confirming phase margin.",
+   "caption": "Step response: settles with little overshoot, indicating adequate phase margin.",
    "kind": "ui",
    "group": null,
    "width": 2358,
@@ -1170,7 +1170,7 @@ window.SITE_DATA = {
   "tia-idvds": {
    "project": "tia",
    "alt": "Family of 45 nm transistor drain-current curves versus drain voltage",
-   "caption": "45 nm device characterisation: ID–VDS output curves.",
+   "caption": "45 nm device characterization: ID–VDS output curves.",
    "kind": "ui",
    "group": null,
    "width": 1638,
@@ -1233,7 +1233,7 @@ window.SITE_DATA = {
   "sram-bitcell": {
    "project": "sram",
    "alt": "6T SRAM bit-cell schematic in Cadence",
-   "caption": "6T bit cell: 120 nm / 45 nm devices, 32,400 nm² cell.",
+   "caption": "6T bit cell: 120 nm / 45 nm devices (ΣW·L = 32,400 nm²).",
    "kind": "ui",
    "group": null,
    "width": 2048,
@@ -1521,12 +1521,12 @@ window.SITE_DATA = {
    "with": [
     "Jalaj Mehta"
    ],
-   "summary": "Synthesised CdSe nanocrystals by hot injection and varied the oleic-acid ligand volume to see how it steers nucleation and growth.",
+   "summary": "Synthesized CdSe nanocrystals by hot injection and varied the oleic-acid ligand volume to see how it steers nucleation and growth.",
    "metrics": [
     {
      "value": "436→582",
      "unit": "nm",
-     "label": "Emission range across the run"
+     "label": "Peak emission, 8 s → 10 min (0.9 mL batch)"
     },
     {
      "value": "4.125",
@@ -1540,8 +1540,8 @@ window.SITE_DATA = {
     }
    ],
    "body": [
-    "Aliquots pulled from 8 s to 10 min trace a continuous red shift as the crystals grow. Raising oleic acid to 0.9 mL pushed the spectra further red, but by more than growth alone predicts: excess ligand bridges neighbouring crystals and they aggregate (Bullen & Mulvaney).",
-    "The heavier passivation still produced the bluest dots of the run, emitting at 436.33 nm. That colour is this site’s accent. STEM at ×1,000,000 measured 4.125 nm crystals, within 2.4% of the 4.03 nm predicted from the 574 nm spectrum."
+    "Aliquots pulled from 8 s to 10 min trace a continuous red shift as the crystals grow. Raising oleic acid to 0.9 mL pushed the spectra further red, but by more than growth alone predicts: excess ligand bridges neighboring crystals and they aggregate (Bullen & Mulvaney).",
+    "The heavier passivation still produced blue-emitting dots, as short as 436.33 nm. That color is this site’s accent. STEM at ×1,000,000 measured 4.125 nm crystals, within 2.4% of the 4.03 nm predicted from the 574 nm spectrum."
    ],
    "feature": {
     "type": "spectrum",
@@ -1553,7 +1553,7 @@ window.SITE_DATA = {
      563.23,
      582.49
     ],
-    "note": "Measured photoluminescence peaks (nm), earliest to latest withdrawal"
+    "note": "Measured PL peaks (nm), standard and 0.9 mL oleic-acid batches"
    },
    "cover": "qd-uv",
    "images": [
@@ -1577,7 +1577,7 @@ window.SITE_DATA = {
     "label": "TRENCH",
     "mag": "×200,000"
    },
-   "course": "Penn · Fall 2026",
+   "course": "Penn · 2026",
    "with": [
     "Hung Nguyen"
    ],
@@ -1600,7 +1600,7 @@ window.SITE_DATA = {
     }
    ],
    "body": [
-    "100 kV electron-beam lithography wrote trenches (20–280 nm) and circular wells (140–240 nm) into PECVD oxide, transferred by CF₄ RIE. A grafted PS-r-PMMA brush neutralised the surface so the PMMA cylinders stand vertically, and a 240 °C anneal let the film order.",
+    "100 kV e-beam lithography in ZEP resist defined trenches (20–280 nm) and circular wells (140–240 nm), transferred into PECVD oxide by CF₄ RIE. A grafted PS-r-PMMA brush neutralized the surface so the PMMA cylinders stand vertically, and a 240 °C anneal let the film order.",
     "The result is a lesson in commensurability. A 20 nm trench forces a single, perfectly straight row; 120 nm gives a clean three-row array; past ~200 nm the walls lose control and grain boundaries appear. In 2D wells, 140 nm is too tight to order, while 180 nm locks in exactly 12 domains."
    ],
    "feature": {
@@ -1674,17 +1674,17 @@ window.SITE_DATA = {
     {
      "value": "−66.7",
      "unit": "%",
-     "label": "Sheet resistance after one week"
+     "label": "Sheet-resistance change after one week"
     },
     {
      "value": "+137",
      "unit": "%",
-     "label": "Contact resistance after one week"
+     "label": "Contact-resistance change after one week"
     }
    ],
    "body": [
-    "Cr/Au electrodes by direct-write lithography and lift-off; CVD graphene moved over by PMMA-assisted electrochemical delamination; channels patterned in O₂ plasma and capped with ALD alumina; then a PDMS microfluidic channel vacuum-bonded on top.",
-    "TLM separated channel from contacts and showed them ageing in opposite directions: the graphene improved by 66.7% in a week while the contacts degraded by 137%. Dirac points spread from −2 V to +19 V, tracking local PMMA and water residue rather than channel length. As a sensor it behaved as theory predicts: hole depletion at pH 4, accumulation at pH 10."
+    "Cr/Au electrodes by direct-write lithography and lift-off; CVD graphene transferred by PMMA-assisted electrochemical delamination; channels patterned in O₂ plasma and capped with ALD alumina; then a PDMS microfluidic channel vacuum-bonded on top.",
+    "TLM separated channel from contacts and showed them aging in opposite directions: the graphene improved by 66.7% in a week while the contacts degraded by 137%. Dirac points spread from −2 V to +19 V, tracking local PMMA and water residue rather than channel length. In static-droplet tests (on a shared class dataset, after our own contacts failed) the graphene showed the predicted hole depletion at pH 4 and accumulation at pH 10; our microfluidic device instead gave a V-shaped response, traced to electrode delamination."
    ],
    "feature": null,
    "cover": "gfet-process",
@@ -1716,8 +1716,8 @@ window.SITE_DATA = {
     "Mahita Yalamanchilli",
     "Charu Shah"
    ],
-   "withNote": "Fabrication and characterisation with Krishna Madhur Akella; gyroscope design with the full team.",
-   "summary": "Designed a split-mode tuning-fork gyroscope, then fabricated and characterised SOI cantilevers and comb drives, tracing every deviation back to the process.",
+   "withNote": "Fabrication and characterization with Krishna Madhur Akella; gyroscope design with Krishna Madhur Akella, Nishitaa Kartik, Mahita Yalamanchilli and Charu Shah.",
+   "summary": "Designed a split-mode tuning-fork gyroscope, then fabricated and characterized SOI cantilevers and comb drives, tracing every deviation back to the process.",
    "metrics": [
     {
      "value": "5→2.5",
@@ -1741,12 +1741,12 @@ window.SITE_DATA = {
     }
    ],
    "body": [
-    "The design: two proof masses driven in anti-phase at 15 kHz with a deliberate 100 Hz mode split, guaranteeing more than 50 Hz of bandwidth and a 123 pA motional current at 1°/s, plus electrostatic spring-softening to trim DRIE critical-dimension loss after fabrication.",
-    "The fab run put that to the test. Profilometry found a 2.5 µm device layer where 5 µm was specified, cutting vertical stiffness by 8×. After HF release the thin cantilevers curled about 12 µm out of plane, pushing pull-in beyond 272 V and shifting resonance by 21.3% on average. The in-plane comb drives were immune to thickness, as theory predicts, and showed displacement scaling with 1/b³ from DRIE CD bias, right up to lateral snap-in at 22.2 V."
+    "The design: two proof masses driven in anti-phase at 15 kHz with a deliberate 100 Hz mode split, designed for more than 50 Hz of bandwidth and a predicted 123 pA motional current at 1°/s, plus electrostatic spring-softening to trim DRIE critical-dimension loss after fabrication.",
+    "The fab run put that to the test. Profilometry found a 2.5 µm device layer where 5 µm was specified, cutting vertical stiffness by 8×. After HF release the thin cantilevers curled about 12 µm out of plane, pushing the estimated pull-in to ≈272 V, far beyond the tester’s ~100 V limit, and shifting resonance by 21.3% on average. The in-plane comb drives were immune to thickness, as theory predicts, and showed displacement scaling with 1/b³ from DRIE CD bias, right up to lateral snap-in at 22.2 V."
    ],
    "feature": {
     "type": "sweep-link",
-    "note": "See the snap-in sequence above."
+    "note": "The comb-drive bias sweep is the featured experiment on the main page."
    },
    "cover": "mems-sem-comb",
    "images": [
@@ -1784,7 +1784,7 @@ window.SITE_DATA = {
     {
      "value": "160.9",
      "unit": "kΩ",
-     "label": "Transimpedance gain (spec ≥ 150)"
+     "label": "Transimpedance gain @ −3 dB (spec ≥ 150 kΩ)"
     },
     {
      "value": "324",
@@ -1804,13 +1804,13 @@ window.SITE_DATA = {
    ],
    "body": [
     "A 100 fF photodiode capacitance pushes the classic shunt-feedback TIA into a gain–bandwidth wall, so the input is a common-gate stage whose 1/gm impedance isolates that pole. Gain comes from six cascaded differential stages of about 2 V/V each rather than one high-gain stage, followed by source-follower buffers to drive the load.",
-    "Before sizing anything, the 45 nm devices were characterised against hand analysis: square-law models overestimated drain current about 6× (velocity saturation), and NMOS fT came out at 239 GHz in simulation versus 365 GHz on paper."
+    "Before sizing anything, the 45 nm devices were characterized against hand analysis: square-law models overestimated drain current about 6× (velocity saturation), and NMOS fT came out at 239 GHz in simulation versus 365 GHz on paper."
    ],
    "feature": {
     "type": "specs",
     "rows": [
      {
-      "param": "Transimpedance gain",
+      "param": "Transimpedance gain (@ −3 dB)",
       "spec": "≥ 150 kΩ",
       "result": "160.9 kΩ",
       "ratio": 1.0726666666666667
@@ -1867,15 +1867,15 @@ window.SITE_DATA = {
    "title": "16×4 6T SRAM",
    "subtitle": "Memory array and peripherals · 45 nm",
    "scale": {
-    "value": "32,400 nm²",
-    "label": "BIT CELL",
+    "value": "120 nm",
+    "label": "DEVICE WIDTH",
     "mag": "SCHEMATIC"
    },
    "course": "ESE 5700 · Penn · Fall 2025",
    "with": [
     "Brandon O’Neill"
    ],
-   "summary": "Designed and optimised a 16×4 SRAM for the lowest area × power × delay figure of merit.",
+   "summary": "Designed and optimized a 16×4 SRAM for the lowest area × power × delay figure of merit.",
    "metrics": [
     {
      "value": "60.78",
@@ -1899,8 +1899,8 @@ window.SITE_DATA = {
     }
    ],
    "body": [
-    "6T bit cells of 32,400 nm² each, with bit-line precharge, a NAND-based row decoder, write drivers and sense amplifiers. Sense-amp topologies were compared in full-array transient simulation: the cross-coupled regenerative latch beat multi-stage single-ended designs on both delay and power.",
-    "Upsizing the cell bought too little speed for the power, so it stayed minimum-sized; VDD was swept down to find the figure-of-merit minimum. Simultaneous reads and writes to different and identical addresses were verified across the array."
+    "Minimum-sized 6T bit cells (six 120 nm × 45 nm devices, a 32,400 nm² gate-area metric), with bit-line precharge, a NAND-based row decoder, write drivers and sense amplifiers. Sense-amp topologies were compared in full-array transient simulation: the cross-coupled regenerative latch beat multi-stage single-ended designs on both delay and power.",
+    "Upsizing the cell bought too little speed for the power, so it stayed minimum-sized; VDD was swept down to find the figure-of-merit minimum. Simultaneous read/write operation was exercised across all 16 words."
    ],
    "feature": null,
    "cover": "sram-bitcell",
@@ -1939,7 +1939,7 @@ window.SITE_DATA = {
     {
      "value": "8",
      "unit": "stages",
-     "label": "Pipelined divider for the M extension"
+     "label": "Pipelined divider (DIV/REM)"
     },
     {
      "value": "AXI4",
@@ -1948,7 +1948,7 @@ window.SITE_DATA = {
     }
    ],
    "body": [
-    "MX, WX and WD bypassing, branch flushing and load-use hazard detection keep the pipeline full; an 8-stage pipelined divider implements the M extension without stalling the core.",
+    "MX, WX and WD bypassing, branch flushing and load-use hazard detection resolve data and control hazards; an 8-stage pipelined divider handles the M extension’s divide and remainder instructions.",
     "Instruction and data memories sit behind AXI4-Lite, with RREADY/ARVALID backpressure and PC tracking across the pipeline. The design was validated cycle-accurate against trace-based golden models and closed timing on FPGA after place-and-route resource analysis."
    ],
    "feature": {
@@ -1997,6 +1997,10 @@ window.SITE_DATA = {
    38.17
   ],
   "snapAt": 22.2,
+  "post": {
+   "volts": [22.2, 22.5, 23.0, 23.5],
+   "gaps": [41.27, 40.24, 39.21, 38.17]
+  },
   "credit": "Optical microscopy of comb drive b2 · ESE 5360 · with Krishna Madhur Akella"
  }
 };

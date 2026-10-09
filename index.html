@@ -25,21 +25,35 @@
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0C'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%232A2A33' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='4.5' fill='%237B72FF'/%3E%3C/svg%3E">
 
-  <link rel="preload" href="assets/fonts/sora-var.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/vendor/lenis.css">
-  <link rel="stylesheet" href="style.css">
-
   <script>
-    /* Runs before first paint: enable JS-only pre-animation states. If app.js never
-       boots (blocked script, missing library), the safety timer restores everything. */
+    /* Runs before first paint.
+       - Preload the two display/body faces (skipped on file://, where crossorigin font preloads fail).
+       - Enable JS-only pre-animation states. If the hero intro has not started after 2.5 s (slow
+         network, blocked script, missing library), the safety timer shows everything statically.
+       - The site manages its own scroll positions (Lenis, case-study overlay), so the browser must not
+         restore stale offsets on popstate/reload. */
     (function (d) {
       var c = d.documentElement.classList;
+      if (location.protocol !== 'file:') {
+        ['sora', 'inter'].forEach(function (f) {
+          var l = d.createElement('link');
+          l.rel = 'preload'; l.as = 'font'; l.type = 'font/woff2'; l.crossOrigin = '';
+          l.href = 'assets/fonts/' + f + '-var.woff2';
+          d.head.appendChild(l);
+        });
+      }
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
       c.add('js');
       if (window.matchMedia && matchMedia('(prefers-reduced-motion: no-preference)').matches) c.add('motion-ok');
-      setTimeout(function () { if (!window.__siteBooted) c.remove('motion-ok'); }, 4000);
+      setTimeout(function () {
+        if (window.__introStarted) return;
+        window.__introSkipped = true;
+        c.remove('motion-ok');
+      }, 2500);
     })(document);
   </script>
+  <link rel="stylesheet" href="assets/vendor/lenis.css">
+  <link rel="stylesheet" href="style.css">
 
   <script type="application/ld+json">
   {
@@ -114,6 +128,7 @@
       <ol class="menu__list">
         <li><a href="#about" data-menu-link><span class="menu__num">01</span><span class="menu__label">About</span></a></li>
         <li><a href="#experience" data-menu-link><span class="menu__num">02</span><span class="menu__label">Experience</span></a></li>
+        <li><a href="#snap-in" data-menu-link><span class="menu__num">03</span><span class="menu__label">Snap-in</span></a></li>
         <li><a href="#work" data-menu-link><span class="menu__num">04</span><span class="menu__label">Work</span></a></li>
         <li><a href="#contact" data-menu-link><span class="menu__num">05</span><span class="menu__label">Contact</span></a></li>
       </ol>
@@ -136,7 +151,7 @@
     <!-- ============================== 1 · HERO ============================== -->
     <section class="hero" id="top" aria-labelledby="hero-title">
       <div class="hero__bg" aria-hidden="true">
-        <img class="hero__tex" src="assets/img/qd/hero-stem-1184.webp" width="1184" height="900" alt="" aria-hidden="true" decoding="async" fetchpriority="high" data-asset="hero-stem">
+        <img class="hero__tex" src="assets/img/qd/hero-stem-1184.webp" width="1184" height="900" alt="" aria-hidden="true" decoding="async" data-asset="hero-stem">
         <div class="hero__vignette"></div>
       </div>
       <div class="hero__reticle" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
@@ -180,13 +195,13 @@
             <div class="about__frame" data-clip>
               <img class="about__img" src="assets/img/photos/headshot-640.webp" srcset="assets/img/photos/headshot-640.webp 640w, assets/img/photos/headshot-1200.webp 1200w" sizes="(min-width: 1100px) 540px, (min-width: 760px) 42vw, 100vw" width="640" height="640" alt="Portrait of Anirudh Devarakonda" loading="lazy" decoding="async" data-asset="headshot">
             </div>
-            <figcaption class="about__caption">U.S. Permanent Resident · Philadelphia, PA</figcaption>
+            <figcaption class="about__caption">U.S. Permanent Resident&nbsp;· Philadelphia, PA</figcaption>
           </figure>
 
           <div class="about__text">
             <h2 class="section-title about__title" id="about-title" data-split>I work where the fab meets the circuit.</h2>
             <div class="about__bio">
-              <p data-reveal>I’m an MS Electrical Engineering candidate at the University of Pennsylvania (May 2027), focused on semiconductor design and fabrication. From 2023 to 2025 I was a Process Integration Engineer at TSMC Arizona’s Fab 21, integrating metal-gate and middle-end-of-line modules for N4/N5 products built for Apple, AMD and NVIDIA. In summer 2026 I joined Intel as an analog/mixed-signal design intern on the 18A node, correlating simulation with silicon.</p>
+              <p data-reveal>I’m an MS Electrical Engineering candidate at the University of Pennsylvania (May 2027), focused on semiconductor design and fabrication. From 2023 to 2025 I was a Process Integration Engineer at TSMC Arizona’s Fab 21, integrating metal-gate and middle-end-of-line modules for N4/N5 products built for Apple, AMD and NVIDIA. In summer 2026 I interned at Intel as an analog/mixed-signal design engineer on the 18A node, correlating simulation with silicon.</p>
               <p data-reveal>That path taught me to read a TEM cross-section and a Spectre waveform the same way: as evidence. Recent work spans quantum-dot synthesis, block-copolymer lithography, graphene sensors, MEMS actuators, a 45 nm wideband TIA and a 6T SRAM.</p>
             </div>
 
@@ -215,9 +230,9 @@
         </div>
 
         <ul class="creds" aria-label="Credentials">
-          <li class="cred" data-reveal><span class="cred__k">Fab</span><span class="cred__v">TSMC Fab 21&nbsp;— N4/N5</span></li>
+          <li class="cred" data-reveal><span class="cred__k">Fab</span><span class="cred__v">TSMC Fab&nbsp;21&nbsp;— N4/N5</span></li>
           <li class="cred" data-reveal><span class="cred__k">Design</span><span class="cred__v">Intel&nbsp;— 18A</span></li>
-          <li class="cred" data-reveal><span class="cred__k">Now</span><span class="cred__v">Penn MSEE&nbsp;— 2027</span></li>
+          <li class="cred" data-reveal><span class="cred__k">Now</span><span class="cred__v">Penn MSEE&nbsp;—&nbsp;2027</span></li>
           <li class="cred" data-reveal><span class="cred__k">Before</span><span class="cred__v">UBC BASc&nbsp;— Distinction</span></li>
           <li class="cred" data-reveal><span class="cred__k">Award</span><span class="cred__v">TSMC&nbsp;— First N5 NVIDIA product in Arizona</span></li>
           <li class="cred" data-reveal><span class="cred__k">Status</span><span class="cred__v">U.S.&nbsp;— Permanent Resident</span></li>
@@ -232,7 +247,7 @@
           <span class="section-rule" aria-hidden="true"></span>
           <p class="section-label"><span class="section-label__num">02</span><span>—</span><span>Experience</span></p>
         </div>
-        <h2 class="section-title" id="exp-title" data-split>Industry, at nanometre scale.</h2>
+        <h2 class="section-title" id="exp-title" data-split>Industry, at nanometer scale.</h2>
 
         <div class="timeline">
           <div class="timeline__rail" aria-hidden="true"><span class="timeline__trace"></span></div>
@@ -249,10 +264,10 @@
               <div class="tl__body">
                 <span class="tl__node" aria-hidden="true"></span>
                 <ul class="tl__bullets">
-                  <li data-reveal>Ran corner analysis and silicon debug across 15+ process flavours on Intel 18A, extracting parasitics to optimise power, performance, area and yield for foundational mixed-signal IP.</li>
+                  <li data-reveal>Ran corner analysis and silicon debug across 15+ process flavors on Intel 18A, extracting parasitics to optimize power, performance, area and yield for foundational mixed-signal IP.</li>
                   <li data-reveal>Built an automated JMP pipeline that turns raw silicon frequency data into core analog parameters (gm, rout, Vt), accelerating simulation-to-silicon correlation and root-causing deviations.</li>
-                  <li data-reveal>Led statistical analysis and electrical failure analysis on digital linear voltage regulators (DLVR): reproducing failure signatures, validating dynamic load response and flagging instabilities.</li>
-                  <li data-reveal>Correlated pre-silicon behavioural models with post-silicon data to isolate parasitic bottlenecks and leakage mechanisms and calibrate analog models.</li>
+                  <li data-reveal>Performed statistical analysis and electrical failure analysis on digital linear voltage regulators (DLVR): reproducing failure signatures, validating dynamic load response and flagging instabilities.</li>
+                  <li data-reveal>Correlated pre-silicon behavioral models with post-silicon data to isolate parasitic bottlenecks and leakage mechanisms and calibrate analog models.</li>
                 </ul>
                 <div class="tl__media">
                   <figure class="tl__photo tl__photo--portrait">
@@ -275,14 +290,14 @@
                 <span class="tl__node" aria-hidden="true"></span>
                 <ul class="pillars" aria-label="Core methods">
                   <li class="pillar" data-reveal><span class="pillar__i">01</span><span class="pillar__t">DOE</span><span class="pillar__d">Designed and executed DOEs to evaluate skew sensitivity.</span></li>
-                  <li class="pillar" data-reveal><span class="pillar__i">02</span><span class="pillar__t">JMP</span><span class="pillar__d">Inline data correlation in JMP to identify and correct tool shifts.</span></li>
+                  <li class="pillar" data-reveal><span class="pillar__i">02</span><span class="pillar__t">JMP</span><span class="pillar__d">Inline data correlation in JMP to flag process trends and leakage defects.</span></li>
                   <li class="pillar" data-reveal><span class="pillar__i">03</span><span class="pillar__t">TEM</span><span class="pillar__d">TEM and FIB cross-sections to validate inline metrology.</span></li>
                 </ul>
                 <ul class="tl__bullets">
                   <li data-reveal>Drove silicon debug and physical failure analysis for NVIDIA’s GB112 AI-server tape-out, root-causing replacement-metal-gate (RMG) failures to enable volume ramp at N4/N5.</li>
                   <li data-reveal>Owned middle-end-of-line modules (RPG, MPG, CMG), holding inline performance within 0.5σ of baseline across Apple, AMD and NVIDIA products.</li>
                   <li data-reveal>Led wafer-acceptance-test (WAT) and electrical-debug strategy with PRM and CPCM monitors, translating electrical signatures into targeted physical analysis.</li>
-                  <li data-reveal>Ran DOEs on GB112 pilot lots and to resolve critical WAT tool issues; drove continuous-improvement projects and Q-time experiments that cut rework.</li>
+                  <li data-reveal>Ran DOEs on GB112 pilot lots and led the root-cause work that resolved critical WAT tool issues; drove continuous-improvement projects and Q-time experiments that cut rework.</li>
                 </ul>
                 <aside class="award" data-reveal aria-label="Award">
                   <p class="award__k">TSMC Award · NVIDIA process integration</p>
@@ -350,7 +365,7 @@
           <p class="section-label"><span class="section-label__num">03</span><span>—</span><span>Featured experiment</span></p>
         </div>
         <h2 class="section-title snap__title" id="snap-title" data-split>Snap-in at 22.2 V</h2>
-        <p class="snap__intro" data-reveal>A lateral comb drive from our SOI MEMS run, imaged as the bias climbs. Displacement grows with V² until, between 22.0 and 22.2 V, it jumps from 5.5 µm to 11.0 µm and the fingers snap sideways.</p>
+        <p class="snap__intro" data-reveal>A lateral comb drive from our SOI MEMS run, imaged as the bias climbs. Displacement grows with V² until, between 22.0 and 22.2&nbsp;V, it jumps from 5.5&nbsp;µm to 11.0&nbsp;µm and the fingers snap sideways.</p>
       </div>
 
       <div class="snap__stage" data-snap-stage>
@@ -359,27 +374,27 @@
             <div class="snap__viewport" data-snap-viewport>
               
             <figure class="snap__frame" data-frame="0">
-              <img src="assets/img/mems/sweep-0-900.webp" srcset="assets/img/mems/sweep-0-900.webp 900w, assets/img/mems/sweep-0-1600.webp 1600w" sizes="(min-width: 760px) 64vw, 100vw" width="900" height="751" alt="Optical micrograph of the comb-drive actuator at 0 V" loading="eager" decoding="async" data-asset="sweep-0" fetchpriority="low">
+              <img src="assets/img/mems/sweep-0-900.webp" srcset="assets/img/mems/sweep-0-900.webp 900w, assets/img/mems/sweep-0-1600.webp 1600w" sizes="(min-width: 1566px) 830px, (min-width: 1100px) 53vw, (min-width: 760px) 70vw, 100vw" width="900" height="751" alt="Optical micrograph of the comb-drive actuator at 0 V" loading="eager" decoding="async" data-asset="sweep-0" fetchpriority="low">
               <figcaption class="snap__frame-label"><span>0 V</span><span>52.27 µm</span></figcaption>
             </figure>
             <figure class="snap__frame" data-frame="1">
-              <img src="assets/img/mems/sweep-1-900.webp" srcset="assets/img/mems/sweep-1-900.webp 900w, assets/img/mems/sweep-1-1600.webp 1600w" sizes="(min-width: 760px) 64vw, 100vw" width="900" height="751" alt="Optical micrograph of the comb-drive actuator at 10 V" loading="lazy" decoding="async" data-asset="sweep-1">
+              <img src="assets/img/mems/sweep-1-900.webp" srcset="assets/img/mems/sweep-1-900.webp 900w, assets/img/mems/sweep-1-1600.webp 1600w" sizes="(min-width: 1566px) 830px, (min-width: 1100px) 53vw, (min-width: 760px) 70vw, 100vw" width="900" height="751" alt="Optical micrograph of the comb-drive actuator at 10 V" loading="lazy" decoding="async" data-asset="sweep-1">
               <figcaption class="snap__frame-label"><span>10 V</span><span>51.92 µm</span></figcaption>
             </figure>
             <figure class="snap__frame" data-frame="2">
-              <img src="assets/img/mems/sweep-2-900.webp" srcset="assets/img/mems/sweep-2-900.webp 900w, assets/img/mems/sweep-2-1600.webp 1600w" sizes="(min-width: 760px) 64vw, 100vw" width="900" height="751" alt="Optical micrograph of the comb-drive actuator at 15 V" loading="lazy" decoding="async" data-asset="sweep-2">
+              <img src="assets/img/mems/sweep-2-900.webp" srcset="assets/img/mems/sweep-2-900.webp 900w, assets/img/mems/sweep-2-1600.webp 1600w" sizes="(min-width: 1566px) 830px, (min-width: 1100px) 53vw, (min-width: 760px) 70vw, 100vw" width="900" height="751" alt="Optical micrograph of the comb-drive actuator at 15 V" loading="lazy" decoding="async" data-asset="sweep-2">
               <figcaption class="snap__frame-label"><span>15 V</span><span>50.55 µm</span></figcaption>
             </figure>
             <figure class="snap__frame" data-frame="3">
-              <img src="assets/img/mems/sweep-3-900.webp" srcset="assets/img/mems/sweep-3-900.webp 900w, assets/img/mems/sweep-3-1600.webp 1600w" sizes="(min-width: 760px) 64vw, 100vw" width="900" height="751" alt="Optical micrograph of the comb-drive actuator at 20 V" loading="lazy" decoding="async" data-asset="sweep-3">
+              <img src="assets/img/mems/sweep-3-900.webp" srcset="assets/img/mems/sweep-3-900.webp 900w, assets/img/mems/sweep-3-1600.webp 1600w" sizes="(min-width: 1566px) 830px, (min-width: 1100px) 53vw, (min-width: 760px) 70vw, 100vw" width="900" height="751" alt="Optical micrograph of the comb-drive actuator at 20 V" loading="lazy" decoding="async" data-asset="sweep-3">
               <figcaption class="snap__frame-label"><span>20 V</span><span>48.83 µm</span></figcaption>
             </figure>
             <figure class="snap__frame" data-frame="4">
-              <img src="assets/img/mems/sweep-4-900.webp" srcset="assets/img/mems/sweep-4-900.webp 900w, assets/img/mems/sweep-4-1600.webp 1600w" sizes="(min-width: 760px) 64vw, 100vw" width="900" height="751" alt="Optical micrograph of the comb-drive actuator at 22 V" loading="lazy" decoding="async" data-asset="sweep-4">
+              <img src="assets/img/mems/sweep-4-900.webp" srcset="assets/img/mems/sweep-4-900.webp 900w, assets/img/mems/sweep-4-1600.webp 1600w" sizes="(min-width: 1566px) 830px, (min-width: 1100px) 53vw, (min-width: 760px) 70vw, 100vw" width="900" height="751" alt="Optical micrograph of the comb-drive actuator at 22 V" loading="lazy" decoding="async" data-asset="sweep-4">
               <figcaption class="snap__frame-label"><span>22 V</span><span>46.77 µm</span></figcaption>
             </figure>
             <figure class="snap__frame" data-frame="5">
-              <img src="assets/img/mems/sweep-5-900.webp" srcset="assets/img/mems/sweep-5-900.webp 900w, assets/img/mems/sweep-5-1600.webp 1600w" sizes="(min-width: 760px) 64vw, 100vw" width="900" height="751" alt="Optical micrograph of the comb-drive actuator at 23.5 V" loading="lazy" decoding="async" data-asset="sweep-5">
+              <img src="assets/img/mems/sweep-5-900.webp" srcset="assets/img/mems/sweep-5-900.webp 900w, assets/img/mems/sweep-5-1600.webp 1600w" sizes="(min-width: 1566px) 830px, (min-width: 1100px) 53vw, (min-width: 760px) 70vw, 100vw" width="900" height="751" alt="Optical micrograph of the comb-drive actuator at 23.5 V" loading="lazy" decoding="async" data-asset="sweep-5">
               <figcaption class="snap__frame-label"><span>23.5 V</span><span>38.17 µm</span></figcaption>
             </figure>
               <div class="snap__overlay" aria-hidden="true">
@@ -416,13 +431,14 @@
                 <g class="plot__xt"><text x="44" y="202">0</text><text x="120" y="202">6</text><text x="196" y="202">12</text><text x="272" y="202">18</text><text x="348" y="202">24</text></g>
                 <g class="plot__yt"><text x="36" y="189">38</text><text x="36" y="131.67">43</text><text x="36" y="74.33">48</text><text x="36" y="17">53</text></g>
                 <text class="plot__lab" x="352" y="216" text-anchor="end">BIAS (V)</text>
-                <text class="plot__lab" x="36" y="8" text-anchor="end">µm</text>
+                <text class="plot__lab" x="4" y="8">µm</text>
                 <g class="plot__snap"><line x1="325.2" x2="325.2" y1="14" y2="186"/><text x="319.2" y="22" text-anchor="end">SNAP-IN</text></g>
-                <path class="plot__line" d="M44 22.37 L170.67 26.38 L234 42.09 L297.33 61.82 L322.67 85.44 L341.67 184.05"/>
+                <path class="plot__line" d="M44 22.37 L170.67 26.38 L234 42.09 L297.33 61.82 L322.67 85.44 L325.2 148.5 L329 160.31 L335.33 172.13 L341.67 184.05"/>
+                <g class="plot__post"><circle cx="325.2" cy="148.5" r="2" data-v="22.2"/><circle cx="329" cy="160.31" r="2" data-v="22.5"/><circle cx="335.33" cy="172.13" r="2" data-v="23"/></g>
                 <g class="plot__pts"><circle cx="44" cy="22.37" r="3" data-pt="0"/><circle cx="170.67" cy="26.38" r="3" data-pt="1"/><circle cx="234" cy="42.09" r="3" data-pt="2"/><circle cx="297.33" cy="61.82" r="3" data-pt="3"/><circle cx="322.67" cy="85.44" r="3" data-pt="4"/><circle cx="341.67" cy="184.05" r="3" data-pt="5"/></g>
                 <g class="plot__cursor"><line class="plot__guide" x1="44" x2="44" y1="22.37" y2="186"/><circle r="4.5" cx="44" cy="22.37"/></g>
               </svg>
-              <figcaption class="sr-only">Backbone gap versus bias for comb drive b2: 52.27 µm at 0 V, 51.92 µm at 10 V, 50.55 µm at 15 V, 48.83 µm at 20 V, 46.77 µm at 22 V and 38.17 µm at 23.5 V, with lateral snap-in at 22.2 V.</figcaption>
+              <figcaption class="sr-only">Backbone gap versus bias for comb drive b2: 52.27 µm at 0 V, 51.92 µm at 10 V, 50.55 µm at 15 V, 48.83 µm at 20 V, 46.77 µm at 22 V, then lateral snap-in: 41.27 µm at 22.2 V, 40.24 µm at 22.5 V, 39.21 µm at 23 V and 38.17 µm at 23.5 V.</figcaption>
             </figure>
             <p class="snap__credit">Optical microscopy of comb drive b2 · ESE 5360 · with Krishna Madhur Akella</p>
           </div>
@@ -439,20 +455,20 @@
         </div>
         <div class="work__head">
           <h2 class="section-title work__title" id="work-title" data-split>Seven projects, four orders of magnitude.</h2>
-          <p class="work__sub" data-reveal>Ordered by physical scale, from a 4 nm nanocrystal to a processor pipeline.</p>
+          <p class="work__sub" data-reveal>Ordered from atom to system: a 4 nm nanocrystal, through devices and circuits, to a processor pipeline.</p>
         </div>
 
         <div class="filters" role="group" aria-label="Filter projects by discipline" data-reveal>
-          <button class="filter" type="button" data-filter="all" aria-pressed="true">All<sup>07</sup></button>
-          <button class="filter" type="button" data-filter="nanofab" aria-pressed="false">Nanofab<sup>03</sup></button>
-          <button class="filter" type="button" data-filter="mems" aria-pressed="false">MEMS<sup>01</sup></button>
-          <button class="filter" type="button" data-filter="circuits" aria-pressed="false">Circuits<sup>02</sup></button>
-          <button class="filter" type="button" data-filter="architecture" aria-pressed="false">Architecture<sup>01</sup></button>
+          <button class="filter" type="button" data-filter="all" aria-pressed="true">All<sup aria-hidden="true">07</sup><span class="sr-only">, 7 projects</span></button>
+          <button class="filter" type="button" data-filter="nanofab" aria-pressed="false">Nanofab<sup aria-hidden="true">03</sup><span class="sr-only">, 3 projects</span></button>
+          <button class="filter" type="button" data-filter="mems" aria-pressed="false">MEMS<sup aria-hidden="true">01</sup><span class="sr-only">, 1 project</span></button>
+          <button class="filter" type="button" data-filter="circuits" aria-pressed="false">Circuits<sup aria-hidden="true">02</sup><span class="sr-only">, 2 projects</span></button>
+          <button class="filter" type="button" data-filter="architecture" aria-pressed="false">Architecture<sup aria-hidden="true">01</sup><span class="sr-only">, 1 project</span></button>
           <p class="filters__status sr-only" aria-live="polite" data-filter-status></p>
         </div>
 
         <div class="work__grid" data-work-grid>
-      <a class="card" href="#project/qd" data-project="qd" data-category="nanofab" data-reveal style="--span-lg:7;--col-lg:1;--row-lg:1;--ar-lg:1.892;--span-md:12;--col-md:1;--row-md:1;--ar-md:2.000;--row-sm:1">
+      <a class="card" href="#project/qd" aria-labelledby="card-qd-t" aria-describedby="card-qd-s card-qd-m" data-project="qd" data-category="nanofab" data-reveal style="--span-lg:7;--col-lg:1;--row-lg:1;--ar-lg:1.892;--span-md:12;--col-md:1;--row-md:1;--ar-md:2.000;--row-sm:1">
         <div class="card__media card__media--photo" data-flip-id="cover-qd">
           <img src="assets/img/qd/qd-uv-800.webp" srcset="assets/img/qd/qd-uv-800.webp 800w, assets/img/qd/qd-uv-1600.webp 1600w" sizes="(min-width: 1100px) 108vw, (min-width: 760px) 175vw, 286vw" width="800" height="210" alt="Ten vials of CdSe quantum dots glowing blue, cyan, green, yellow, orange and red under UV light" loading="lazy" decoding="async" data-asset="qd-uv" style="--pos:0% 50%">
           <span class="card__index" aria-hidden="true">01</span>
@@ -461,13 +477,13 @@
         </div>
         <div class="card__body">
           <p class="card__meta"><span>Nanofab</span><span>NANOCRYSTAL</span></p>
-          <h3 class="card__title">CdSe Quantum Dots</h3>
-          <p class="card__sub">Hot-injection synthesis and size control</p>
-          <p class="card__metric"><span class="card__metric-v">436<svg class="glyph-arrow" viewBox="0 0 16 10" aria-hidden="true" focusable="false"><path d="M0 5h14M10 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><span class="sr-only"> to </span>582 nm</span><span class="card__metric-l">Emission range across the run</span></p>
+          <h3 class="card__title" id="card-qd-t">CdSe Quantum Dots</h3>
+          <p class="card__sub" id="card-qd-s">Hot-injection synthesis and size control</p>
+          <p class="card__metric" id="card-qd-m"><span class="card__metric-v">436<svg class="glyph-arrow" viewBox="0 0 16 10" aria-hidden="true" focusable="false"><path d="M0 5h14M10 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><span class="sr-only"> to </span>582 nm</span><span class="card__metric-l">Peak emission, 8 s <svg class="glyph-arrow" viewBox="0 0 16 10" aria-hidden="true" focusable="false"><path d="M0 5h14M10 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><span class="sr-only"> to </span> 10&nbsp;min (0.9&nbsp;mL batch)</span></p>
         </div>
       </a>
-      <a class="card" href="#project/dsa" data-project="dsa" data-category="nanofab" data-reveal style="--span-lg:5;--col-lg:8;--row-lg:1;--ar-lg:1.333;--span-md:6;--col-md:1;--row-md:2;--ar-md:1.333;--row-sm:2">
-        <div class="card__media card__media--micro" data-flip-id="cover-dsa">
+      <a class="card" href="#project/dsa" aria-labelledby="card-dsa-t" aria-describedby="card-dsa-s card-dsa-m" data-project="dsa" data-category="nanofab" data-reveal style="--span-lg:5;--col-lg:8;--row-lg:1;--ar-lg:1.333;--span-md:6;--col-md:1;--row-md:2;--ar-md:1.333;--row-sm:2">
+        <div class="card__media card__media--micro card__media--figure" data-flip-id="cover-dsa">
           <img src="assets/img/dsa/dsa-afm-grid-800.webp" srcset="assets/img/dsa/dsa-afm-grid-800.webp 800w, assets/img/dsa/dsa-afm-grid-1094.webp 1094w" sizes="(min-width: 1100px) 38vw, (min-width: 760px) 46vw, 100vw" width="800" height="809" alt="Nine AFM height maps of block copolymer patterns in trenches and circular wells" loading="lazy" decoding="async" data-asset="dsa-afm-grid">
           <span class="card__index" aria-hidden="true">02</span>
           <span class="card__scale" aria-hidden="true">20 nm</span>
@@ -475,12 +491,12 @@
         </div>
         <div class="card__body">
           <p class="card__meta"><span>Nanofab</span><span>TRENCH</span></p>
-          <h3 class="card__title">Directed Self-Assembly</h3>
-          <p class="card__sub">Sub-20 nm patterning with PS-b-PMMA block copolymers</p>
-          <p class="card__metric"><span class="card__metric-v">≈19 nm</span><span class="card__metric-l">Half-pitch (0.5 L₀) resolved in a 20 nm trench</span></p>
+          <h3 class="card__title" id="card-dsa-t">Directed Self-Assembly</h3>
+          <p class="card__sub" id="card-dsa-s">Sub-20 nm patterning with PS-b-PMMA block copolymers</p>
+          <p class="card__metric" id="card-dsa-m"><span class="card__metric-v">≈19 nm</span><span class="card__metric-l">Half-pitch (0.5 L₀) resolved in a 20 nm trench</span></p>
         </div>
       </a>
-      <a class="card" href="#project/gfet" data-project="gfet" data-category="nanofab" data-reveal style="--span-lg:4;--col-lg:1;--row-lg:2;--ar-lg:1.333;--span-md:6;--col-md:7;--row-md:2;--ar-md:1.333;--row-sm:3">
+      <a class="card" href="#project/gfet" aria-labelledby="card-gfet-t" aria-describedby="card-gfet-s card-gfet-m" data-project="gfet" data-category="nanofab" data-reveal style="--span-lg:4;--col-lg:1;--row-lg:2;--ar-lg:1.333;--span-md:6;--col-md:7;--row-md:2;--ar-md:1.333;--row-sm:3">
         <div class="card__media card__media--plot" data-flip-id="cover-gfet">
           <img src="assets/img/gfet/gfet-process-800.webp" srcset="assets/img/gfet/gfet-process-800.webp 800w, assets/img/gfet/gfet-process-1418.webp 1418w" sizes="(min-width: 1100px) 31vw, (min-width: 760px) 46vw, 100vw" width="800" height="481" alt="Fifteen-panel process cross-section for electrodes and graphene transfer" loading="lazy" decoding="async" data-asset="gfet-process">
           <span class="card__index" aria-hidden="true">03</span>
@@ -489,12 +505,12 @@
         </div>
         <div class="card__body">
           <p class="card__meta"><span>Nanofab</span><span>CHANNEL</span></p>
-          <h3 class="card__title">Graphene FET pH Sensor</h3>
-          <p class="card__sub">Fabrication, TLM extraction and liquid-gated sensing</p>
-          <p class="card__metric"><span class="card__metric-v">1,545 cm²/V·s</span><span class="card__metric-l">Hole mobility</span></p>
+          <h3 class="card__title" id="card-gfet-t">Graphene FET pH Sensor</h3>
+          <p class="card__sub" id="card-gfet-s">Fabrication, TLM extraction and liquid-gated sensing</p>
+          <p class="card__metric" id="card-gfet-m"><span class="card__metric-v">1,545 cm²/V·s</span><span class="card__metric-l">Hole mobility</span></p>
         </div>
       </a>
-      <a class="card" href="#project/mems" data-project="mems" data-category="mems" data-reveal style="--span-lg:4;--col-lg:5;--row-lg:2;--ar-lg:1.333;--span-md:6;--col-md:1;--row-md:3;--ar-md:1.333;--row-sm:4">
+      <a class="card" href="#project/mems" aria-labelledby="card-mems-t" aria-describedby="card-mems-s card-mems-m" data-project="mems" data-category="mems" data-reveal style="--span-lg:4;--col-lg:5;--row-lg:2;--ar-lg:1.333;--span-md:6;--col-md:1;--row-md:3;--ar-md:1.333;--row-sm:4">
         <div class="card__media card__media--micro" data-flip-id="cover-mems">
           <img src="assets/img/mems/mems-sem-comb-800.webp" srcset="assets/img/mems/mems-sem-comb-800.webp 800w, assets/img/mems/mems-sem-comb-1600.webp 1600w" sizes="(min-width: 1100px) 31vw, (min-width: 760px) 46vw, 100vw" width="800" height="643" alt="SEM of interdigitated comb-drive fingers with length annotations near 70 µm" loading="lazy" decoding="async" data-asset="mems-sem-comb">
           <span class="card__index" aria-hidden="true">04</span>
@@ -503,42 +519,42 @@
         </div>
         <div class="card__body">
           <p class="card__meta"><span>MEMS</span><span>CANTILEVER</span></p>
-          <h3 class="card__title">MEMS: Gyroscope to Silicon</h3>
-          <p class="card__sub">Design, SOI fabrication and failure analysis</p>
-          <p class="card__metric"><span class="card__metric-v">5<svg class="glyph-arrow" viewBox="0 0 16 10" aria-hidden="true" focusable="false"><path d="M0 5h14M10 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><span class="sr-only"> to </span>2.5 µm</span><span class="card__metric-l">Device layer: designed vs. fabricated</span></p>
+          <h3 class="card__title" id="card-mems-t">MEMS: Gyroscope to Silicon</h3>
+          <p class="card__sub" id="card-mems-s">Design, SOI fabrication and failure analysis</p>
+          <p class="card__metric" id="card-mems-m"><span class="card__metric-v">5<svg class="glyph-arrow" viewBox="0 0 16 10" aria-hidden="true" focusable="false"><path d="M0 5h14M10 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><span class="sr-only"> to </span>2.5 µm</span><span class="card__metric-l">Device layer: designed vs. fabricated</span></p>
         </div>
       </a>
-      <a class="card" href="#project/tia" data-project="tia" data-category="circuits" data-reveal style="--span-lg:4;--col-lg:9;--row-lg:2;--ar-lg:1.333;--span-md:6;--col-md:7;--row-md:3;--ar-md:1.333;--row-sm:5">
-        <div class="card__media card__media--ui" data-flip-id="cover-tia">
-          <img src="assets/img/tia/tia-ac-800.webp" srcset="assets/img/tia/tia-ac-800.webp 800w, assets/img/tia/tia-ac-1019.webp 1019w" sizes="(min-width: 1100px) 31vw, (min-width: 760px) 46vw, 100vw" width="800" height="269" alt="AC simulation of transimpedance gain falling off near 324 MHz" loading="lazy" decoding="async" data-asset="tia-ac">
+      <a class="card" href="#project/tia" aria-labelledby="card-tia-t" aria-describedby="card-tia-s card-tia-m" data-project="tia" data-category="circuits" data-reveal style="--span-lg:4;--col-lg:9;--row-lg:2;--ar-lg:1.333;--span-md:6;--col-md:7;--row-md:3;--ar-md:1.333;--row-sm:5">
+        <div class="card__media card__media--ui card__media--wide" data-flip-id="cover-tia">
+          <img src="assets/img/tia/tia-ac-800.webp" srcset="assets/img/tia/tia-ac-800.webp 800w, assets/img/tia/tia-ac-1019.webp 1019w" sizes="(min-width: 1100px) 66vw, (min-width: 760px) 92vw, 220vw" width="800" height="269" alt="AC simulation of transimpedance gain falling off near 324 MHz" loading="lazy" decoding="async" data-asset="tia-ac" style="--pos:76% 50%">
           <span class="card__index" aria-hidden="true">05</span>
           <span class="card__scale" aria-hidden="true">45 nm</span>
           <span class="card__cta" aria-hidden="true"><span>View case study</span><svg class="icon"><use href="#i-arrow-r"/></svg></span>
         </div>
         <div class="card__body">
           <p class="card__meta"><span>Circuits</span><span>CMOS · CIRCUIT</span></p>
-          <h3 class="card__title">Wideband Transimpedance Amplifier</h3>
-          <p class="card__sub">Optical-receiver front end · 45 nm CMOS · 1 V</p>
-          <p class="card__metric"><span class="card__metric-v">160.9 kΩ</span><span class="card__metric-l">Transimpedance gain (spec ≥ 150)</span></p>
+          <h3 class="card__title" id="card-tia-t">Wideband Transimpedance Amplifier</h3>
+          <p class="card__sub" id="card-tia-s">Optical-receiver front end · 45 nm CMOS · 1 V</p>
+          <p class="card__metric" id="card-tia-m"><span class="card__metric-v">160.9 kΩ</span><span class="card__metric-l">Transimpedance gain @ −3 dB (spec ≥ 150 kΩ)</span></p>
         </div>
       </a>
-      <a class="card" href="#project/sram" data-project="sram" data-category="circuits" data-reveal style="--span-lg:6;--col-lg:1;--row-lg:3;--ar-lg:1.333;--span-md:6;--col-md:1;--row-md:4;--ar-md:1.333;--row-sm:6">
+      <a class="card" href="#project/sram" aria-labelledby="card-sram-t" aria-describedby="card-sram-s card-sram-m" data-project="sram" data-category="circuits" data-reveal style="--span-lg:6;--col-lg:1;--row-lg:3;--ar-lg:1.333;--span-md:6;--col-md:1;--row-md:4;--ar-md:1.333;--row-sm:6">
         <div class="card__media card__media--ui" data-flip-id="cover-sram">
           <img src="assets/img/sram/sram-bitcell-800.webp" srcset="assets/img/sram/sram-bitcell-800.webp 800w, assets/img/sram/sram-bitcell-1600.webp 1600w" sizes="(min-width: 1100px) 46vw, (min-width: 760px) 46vw, 100vw" width="800" height="412" alt="6T SRAM bit-cell schematic in Cadence" loading="lazy" decoding="async" data-asset="sram-bitcell">
           <span class="card__index" aria-hidden="true">06</span>
-          <span class="card__scale" aria-hidden="true">32,400 nm²</span>
+          <span class="card__scale" aria-hidden="true">120 nm</span>
           <span class="card__cta" aria-hidden="true"><span>View case study</span><svg class="icon"><use href="#i-arrow-r"/></svg></span>
         </div>
         <div class="card__body">
-          <p class="card__meta"><span>Circuits</span><span>BIT CELL</span></p>
-          <h3 class="card__title">16×4 6T SRAM</h3>
-          <p class="card__sub">Memory array and peripherals · 45 nm</p>
-          <p class="card__metric"><span class="card__metric-v">60.78 ps</span><span class="card__metric-l">Worst-case read access</span></p>
+          <p class="card__meta"><span>Circuits</span><span>DEVICE WIDTH</span></p>
+          <h3 class="card__title" id="card-sram-t">16×4 6T SRAM</h3>
+          <p class="card__sub" id="card-sram-s">Memory array and peripherals · 45 nm</p>
+          <p class="card__metric" id="card-sram-m"><span class="card__metric-v">60.78 ps</span><span class="card__metric-l">Worst-case read access</span></p>
         </div>
       </a>
-      <a class="card" href="#project/rv32" data-project="rv32" data-category="architecture" data-reveal style="--span-lg:6;--col-lg:7;--row-lg:3;--ar-lg:1.333;--span-md:6;--col-md:7;--row-md:4;--ar-md:1.333;--row-sm:7">
+      <a class="card" href="#project/rv32" aria-labelledby="card-rv32-t" aria-describedby="card-rv32-s card-rv32-m" data-project="rv32" data-category="architecture" data-reveal style="--span-lg:6;--col-lg:7;--row-lg:3;--ar-lg:1.333;--span-md:6;--col-md:7;--row-md:4;--ar-md:1.333;--row-sm:7">
         <div class="card__media card__media--art" data-flip-id="cover-rv32">
-          <svg class="pipe-art" viewBox="0 0 400 300" role="img" aria-label="Five-stage pipeline diagram: IF, ID, EX, MEM and WB with MX, WX and WD bypass paths">
+          <svg class="pipe-art" viewBox="0 0 400 300" aria-hidden="true" focusable="false">
           <defs>
             <pattern id="pipe-dots" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#2A2A33"/></pattern>
             <marker id="pipe-head" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 8 4 0 8z" fill="context-stroke"/></marker>
@@ -569,9 +585,9 @@
         </div>
         <div class="card__body">
           <p class="card__meta"><span>Architecture</span><span>SYSTEM</span></p>
-          <h3 class="card__title">RV32IM Pipelined Processor</h3>
-          <p class="card__sub">5-stage pipeline with AXI4-Lite memory · SystemVerilog</p>
-          <p class="card__metric"><span class="card__metric-v">5 stages</span><span class="card__metric-l">IF · ID · EX · MEM · WB</span></p>
+          <h3 class="card__title" id="card-rv32-t">RV32IM Pipelined Processor</h3>
+          <p class="card__sub" id="card-rv32-s">5-stage pipeline with AXI4-Lite memory · SystemVerilog</p>
+          <p class="card__metric" id="card-rv32-m"><span class="card__metric-v">5 stages</span><span class="card__metric-l">IF · ID · EX · MEM · WB</span></p>
         </div>
       </a>
         </div>
@@ -591,7 +607,7 @@
           <div class="contact__actions" data-reveal>
             <div class="contact__email">
               <a class="contact__mail" href="mailto:andydevarakonda@gmail.com">andydevarakonda@gmail.com</a>
-              <button class="btn-copy" type="button" data-copy="andydevarakonda@gmail.com"><span class="btn-copy__label" data-copy-label>Copy</span></button>
+              <button class="btn-copy" type="button" data-copy="andydevarakonda@gmail.com"><span class="btn-copy__label" data-copy-label>Copy</span><span class="sr-only"> email address</span></button>
               <span class="sr-only" aria-live="polite" data-copy-status></span>
             </div>
             <ul class="contact__links">
@@ -608,7 +624,7 @@
   <footer class="footer">
     <div class="container footer__inner">
       <p>© 2026 Anirudh Devarakonda</p>
-      <p class="footer__accent"><span class="footer__swatch" aria-hidden="true"></span>Accent #7B72FF = 436 nm, the bluest quantum dot from ESE 5360.</p>
+      <p class="footer__accent"><span class="footer__swatch" aria-hidden="true"></span>Accent #7B72FF ≈ 436 nm, the bluest dot of the 0.9&nbsp;mL oleic-acid batch (ESE 5360).</p>
       <a class="footer__top" href="#top"><span>Back to top</span><svg class="icon" aria-hidden="true"><use href="#i-arrow-u"/></svg></a>
     </div>
   </footer>
@@ -627,7 +643,7 @@
   </div>
 
   <!-- ============================== LIGHTBOX ============================== -->
-  <div class="lb" id="lightbox" role="dialog" aria-modal="true" aria-label="Figure viewer" hidden data-lenis-prevent>
+  <div class="lb" id="lightbox" role="dialog" aria-modal="true" aria-label="Figure viewer" aria-describedby="lb-caption" hidden data-lenis-prevent>
     <div class="lb__backdrop" data-lb-close-backdrop></div>
     <div class="lb__stage" data-lb-stage>
       <button class="lb__zoom" type="button" data-lb-zoom aria-pressed="false" aria-label="Zoom image"></button>
@@ -636,9 +652,10 @@
     <button class="lb__btn lb__next" type="button" data-lb-next aria-label="Next figure"><svg class="icon" aria-hidden="true"><use href="#i-arrow-r"/></svg></button>
     <button class="lb__btn lb__close" type="button" data-lb-close aria-label="Close figure viewer"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
     <div class="lb__info">
-      <p class="lb__counter" data-lb-counter>01 / 01</p>
-      <p class="lb__caption" data-lb-caption></p>
-      <p class="lb__asset" data-lb-asset></p>
+      <p class="lb__counter" id="lb-counter" data-lb-counter>01 / 01</p>
+      <p class="lb__caption" id="lb-caption" data-lb-caption></p>
+      <p class="lb__asset" aria-hidden="true" data-lb-asset></p>
+      <p class="sr-only" aria-live="polite" aria-atomic="true" data-lb-live></p>
     </div>
   </div>
 

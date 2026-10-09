@@ -57,8 +57,13 @@
   const rich = (s) => esc(s).replace(/→/g, ARROW_GLYPH + '<span class="sr-only"> to </span>');
   const icon = (name) => `<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-${name}"/></svg>`;
   const CATEGORY = { nanofab: 'Nanofab', mems: 'MEMS', circuits: 'Circuits', architecture: 'Architecture' };
-  // Cover focal points shared by the card and the case-study hero (QD: the blue, 436 nm end of the series).
-  const COVER_POS = { qd: '0% 50%' };
+  // Cover treatments shared by the card and the case-study hero, so the Flip morph between them is seamless.
+  // QD: the blue, 436 nm end of the series. TIA: the −3 dB roll-off of the wide AC plot.
+  const COVER_POS = { qd: '0% 50%', tia: '76% 50%' };
+  // 'wide' = crop a very wide tool screenshot (cover); 'figure' = labelled figure plate on a white mat (contain).
+  const COVER_MAT = { tia: 'wide', dsa: 'figure' };
+  /** Keep a number and its unit on one line ("20 nm", "0.9 mL"). */
+  const nbspUnits = (html) => html.replace(/(\d)\s(?=(?:nm|µm|mm|m|V|mV|kV|mL|Hz|kHz|MHz|GHz|ps|ns|s|min|°C|kΩ|Ω|dB|%)(?![\w]))/g, '$1&nbsp;');
 
   const PROJECTS = DATA ? DATA.projects.slice().sort((a, b) => a.order - b.order) : [];
   const BY_ID = Object.fromEntries(PROJECTS.map((p) => [p.id, p]));
@@ -196,12 +201,38 @@
     const navOffset = () => -($('#nav')?.offsetHeight || 0);
 
     /** Scroll the page to an element/selector (Lenis when available, native otherwise). */
+    // While a programmatic (anchor) scroll runs, the nav stays visible: the offset reserves its space.
+    let programmatic = false;
+    let progTimer = 0;
+    const endProgrammatic = () => {
+      clearTimeout(progTimer);
+      if (!programmatic) return;
+      programmatic = false;
+      Nav.show();
+    };
+
     function scrollTo(target, { immediate = false, offset, onComplete } = {}) {
       const el = typeof target === 'string' ? $(target) : target;
       if (!el) return;
       const off = offset ?? (el.id === 'top' ? 0 : navOffset());
       if (lenis) {
-        lenis.scrollTo(el, { offset: off, immediate, force: true, duration: immediate ? 0 : 1.25, easing: easeOut, onComplete });
+        const duration = immediate ? 0 : 1.25;
+        if (!immediate) {
+          programmatic = true;
+          clearTimeout(progTimer);
+          progTimer = setTimeout(endProgrammatic, (duration + 0.4) * 1000); // safety if a wheel interrupts it
+        }
+        lenis.scrollTo(el, {
+          offset: off,
+          immediate,
+          force: true,
+          duration,
+          easing: easeOut,
+          onComplete: () => {
+            if (!immediate) endProgrammatic();
+            if (onComplete) onComplete();
+          },
+        });
       } else {
         const y = el.id === 'top' ? 0 : el.getBoundingClientRect().top + window.scrollY + off;
         window.scrollTo(0, Math.max(0, y));
@@ -215,7 +246,14 @@
       start: () => lenis && lenis.start(),
       add: (l) => nested.add(l),
       remove: (l) => nested.delete(l),
+      /** Re-sync Lenis with the real window scroll (after the page was scrolled behind its back). */
+      sync: () => {
+        if (!lenis) return;
+        if (lenis.resize) lenis.resize(); // fresh limits first, or the target is clamped to the old page height
+        lenis.scrollTo(window.scrollY, { immediate: true, force: true });
+      },
       get lenis() { return lenis; },
+      get programmatic() { return programmatic; },
     };
   })();
 
@@ -254,7 +292,7 @@
     };
     if (!el) {
       const noop = () => {};
-      return { init: noop, setSection: noop, preview: noop, release: noop, setZoom: noop, setZooming: noop, hide: noop, show: noop, intro: noop, STATES };
+      return { init: noop, setSection: noop, preview: noop, release: noop, setZoom: noop, setZooming: noop, hide: noop, show: noop, intro: noop };
     }
     const text = $('.hud__text', el);
     const bg = $('.hud__bg', el);
@@ -284,7 +322,9 @@
     let barW = 0;
     const barMax = () => bar.offsetWidth || 96;
     const barPx = (px) => clamp(px * (barMax() / 96), 6, barMax());
-    const visibleWidth = () => (mqMobile.matches ? el.offsetWidth : bar.offsetLeft + barW + PAD);
+    // Full-width bottom bar on phones and short (landscape) viewports — keep in sync with style.css.
+    const mqFull = window.matchMedia('(max-width: 759px), (max-height: 520px)');
+    const visibleWidth = () => (mqFull.matches ? el.offsetWidth : bar.offsetLeft + barW + PAD);
 
     function paintBar(animate) {
       const max = barMax();
@@ -345,12 +385,11 @@
     }
 
     return {
-      STATES,
       init() {
         current = { ...STATES.hero };
         geometry(() => {}, STATES.hero.bar, false);
         const refit = () => geometry(() => {}, null, false);
-        mqMobile.addEventListener('change', refit);
+        mqFull.addEventListener('change', refit);
         window.addEventListener('resize', refit, { passive: true });
         if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(refit);
       },
@@ -407,28 +446,46 @@
     let played = false;
 
     function reveal() {
-      // Visible fallback state (reduced motion / missing plugins).
+      // Visible fallback state (reduced motion / missing plugins / intro skipped by the head failsafe).
+      played = true;
+      window.__introStarted = true;
+      if (!hero) return;
       $$('[data-intro]', hero).forEach((n) => (n.style.visibility = 'visible'));
+      $$('[data-intro-lines]', hero).forEach((n) => (n.style.opacity = '1'));
       const tex = $('.hero__tex', hero);
-      if (tex) tex.style.opacity = '';
+      if (tex) tex.style.opacity = '0.28';
       if (HUD.el) HUD.el.style.visibility = 'visible';
     }
 
-    /** Plays once, after fonts are ready. Max ≈2.2 s. */
+    // One shared, debounced refresh after a SplitText re-split (resize across a breakpoint changes the
+    // layout above pinned sections after ScrollTrigger has already measured).
+    let splitTimer = 0;
+    const splitSeen = new WeakSet();
+    function refreshAfterSplit(el) {
+      if (!splitSeen.has(el)) {
+        splitSeen.add(el);
+        return;
+      }
+      clearTimeout(splitTimer);
+      splitTimer = setTimeout(() => ScrollTrigger.refresh(), 120);
+    }
+
+    /** Plays once, after the display fonts are ready (capped wait). Max ≈2.2 s. */
     function intro() {
       if (played || !hero) return;
-      played = true;
-      if (reduced() || !HAS_SPLIT) {
+      if (reduced() || !HAS_SPLIT || window.__introSkipped) {
         reveal();
         return;
       }
+      played = true;
+      window.__introStarted = true;
       const tex = $('.hero__tex', hero);
       const lines = $$('.hero__line', hero);
       const name = $('.hero__name', hero);
       const textBlocks = $$('[data-intro-lines]', hero);
       const fades = [$('.hero__eyebrow', hero), $('.hero__meta', hero), $('.hero__ctas', hero), $('.hero__cue', hero)].filter(Boolean);
 
-      const chars = SplitText.create(lines, { type: 'chars', mask: 'chars', charsClass: 'hero__char', aria: 'none' });
+      const chars = SplitText.create(lines, { type: 'chars', mask: 'chars', charsClass: 'hero__char', aria: 'none', tag: 'span' });
       gsap.set(name, { autoAlpha: 1 });
 
       const tl = gsap.timeline({ defaults: { ease: EASE } });
@@ -442,9 +499,11 @@
         type: 'lines',
         mask: 'lines',
         linesClass: 'split-line',
+        tag: 'span',
         autoSplit: true,
         onSplit(self) {
           gsap.set(textBlocks, { autoAlpha: 1 });
+          textBlocks.forEach(refreshAfterSplit);
           return gsap.from(self.lines, { yPercent: 100, duration: 1, ease: EASE, stagger: 0.08, delay: 0.45 });
         },
       });
@@ -455,7 +514,10 @@
       if (!hero) return;
       const bgEl = $('.hero__bg', hero);
       const [l1, l2] = $$('.hero__line', hero);
-      const st = { trigger: hero, start: 'top top', end: 'bottom top', scrub: true };
+      // The filtered full-bleed texture gets its own layer only while the scrub is live (no repaint per frame).
+      const layer = (on) => gsap.set(bgEl, { willChange: on ? 'transform, opacity' : 'auto' });
+      layer(window.scrollY < hero.offsetHeight);
+      const st = { trigger: hero, start: 'top top', end: 'bottom top', scrub: true, onToggle: (self) => layer(self.isActive) };
       gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: st })
         .to(bgEl, { scale: 0.86, opacity: 0, duration: 1 }, 0)
         .to(l1, { yPercent: -25, duration: 1 }, 0)
@@ -466,15 +528,17 @@
     /** MAG zoom readout (runs with and without motion; it is text, not movement). */
     function zoomTrigger() {
       if (!hero || !HAS_GSAP) return;
+      // Ends exactly where the About HUD state takes over ('top 55%' of #about), so MAG reaches ×1 as the
+      // labels switch to HUMAN · ENGINEER — the readout never contradicts itself.
       ScrollTrigger.create({
         trigger: hero,
         start: 'top top',
-        end: 'bottom top',
+        end: 'bottom 55%',
         onUpdate: (self) => HUD.setZoom(self.progress),
         onToggle: (self) => HUD.setZooming(self.isActive),
       });
     }
-    return { intro, scrub, reveal, zoomTrigger };
+    return { intro, scrub, reveal, zoomTrigger, refreshAfterSplit };
   })();
 
   /* ------------------------------------------------------------------------
@@ -521,9 +585,11 @@
           type: chars ? 'lines,words,chars' : 'lines',
           mask: 'lines',
           linesClass: 'split-line',
+          tag: 'span',
           autoSplit: true,
           onSplit(self) {
             gsap.set(el, { visibility: 'visible' });
+            Hero.refreshAfterSplit(el);
             return gsap.from(chars ? self.chars : self.lines, {
               yPercent: chars ? 110 : 100,
               duration: chars ? 0.9 : 1,
@@ -590,7 +656,7 @@
     const S = DATA ? DATA.sweep : null;
     const stage = $('[data-snap-stage]');
     const plot = $('[data-plot]');
-    if (!S || !stage || !plot) return { motion: () => {}, still: () => {} };
+    if (!S || !stage || !plot) return { motion: () => {}, still: () => {}, watchPreload: () => {} };
 
     const frames = $$('.snap__frame', stage);
     const ticks = $$('.snap__ticks li', stage);
@@ -603,23 +669,38 @@
     const cursor = $('.plot__cursor circle', plot);
     const guide = $('.plot__guide', plot);
     const pts = $$('.plot__pts circle', plot);
+    const postPts = $$('.plot__post circle', plot);
 
     const X = (v) => geom.x0 + (v / geom.vmax) * (geom.x1 - geom.x0);
     const Y = (g) => geom.y1 - ((g - geom.gmin) / (geom.gmax - geom.gmin)) * (geom.y1 - geom.y0);
-    const P = S.volts.map((v, i) => [X(v), Y(S.gaps[i])]);
+    const last = S.volts.length - 1;
+
+    // Gap vs. bias: the six imaged keyframes plus the measured post-snap points (report Table IV), so the
+    // readout and the curve show the 22.0 → 22.2 V jump instead of a straight 22 → 23.5 V interpolation.
+    const curve = S.volts.map((v, i) => [v, S.gaps[i]]);
+    if (S.post) S.post.volts.forEach((v, i) => { if (!curve.some((c) => c[0] === v)) curve.push([v, S.post.gaps[i]]); });
+    curve.sort((a, b) => a[0] - b[0]);
+    const P = curve.map(([v, g]) => [X(v), Y(g)]);
     const seg = P.slice(1).map((p, i) => Math.hypot(p[0] - P[i][0], p[1] - P[i][1]));
     const total = seg.reduce((a, b) => a + b, 0);
-    const last = S.volts.length - 1;
+    line.setAttribute('d', 'M' + P.map((p) => `${+p[0].toFixed(2)} ${+p[1].toFixed(2)}`).join(' L'));
 
     let lastIdx = -1;
     let snapped = null;
 
-    /** Linear interpolation between measured keyframes for progress p ∈ [0, 1]. */
+    /** Bias interpolated linearly between the imaged keyframes for progress p ∈ [0, 1]. */
     function sample(p) {
       const t = clamp(p, 0, 1) * last;
       const k = Math.min(Math.floor(t), last - 1);
       const f = t - k;
-      return { t, k, f, bias: lerp(S.volts[k], S.volts[k + 1], f), gap: lerp(S.gaps[k], S.gaps[k + 1], f) };
+      return { t, bias: lerp(S.volts[k], S.volts[k + 1], f) };
+    }
+    /** Position on the measured curve for a bias: segment index j and fraction f. */
+    function onCurve(bias) {
+      let j = 0;
+      while (j < curve.length - 2 && bias > curve[j + 1][0]) j++;
+      const f = clamp((bias - curve[j][0]) / (curve[j + 1][0] - curve[j][0]), 0, 1);
+      return { j, f, gap: lerp(curve[j][1], curve[j + 1][1], f) };
     }
 
     function setState(isSnap, animate) {
@@ -631,25 +712,29 @@
 
     function render(p) {
       const s = sample(p);
-      ro.bias.textContent = s.bias.toFixed(1);
-      ro.gap.textContent = s.gap.toFixed(2);
-      const isSnap = s.bias >= S.snapAt - 1e-9;
+      // Compare the value the reader sees, so "22.2 V" never sits next to "STABLE".
+      const shown = Math.round(s.bias * 10) / 10;
+      const c = onCurve(s.bias);
+      ro.bias.textContent = shown.toFixed(1);
+      ro.gap.textContent = c.gap.toFixed(2);
+      const isSnap = shown >= S.snapAt - 1e-9;
       if (isSnap !== snapped) {
         const first = snapped === null;
         snapped = isSnap;
         setState(isSnap, !first);
       }
       // Plot: the polyline is drawn exactly up to the cursor.
-      const drawn = seg.slice(0, s.k).reduce((a, b) => a + b, 0) + seg[s.k] * s.f;
+      const drawn = seg.slice(0, c.j).reduce((a, b) => a + b, 0) + seg[c.j] * c.f;
       line.style.strokeDashoffset = String(total - drawn);
-      const cx = lerp(P[s.k][0], P[s.k + 1][0], s.f);
-      const cy = lerp(P[s.k][1], P[s.k + 1][1], s.f);
+      const cx = lerp(P[c.j][0], P[c.j + 1][0], c.f);
+      const cy = lerp(P[c.j][1], P[c.j + 1][1], c.f);
       cursor.setAttribute('cx', cx.toFixed(2));
       cursor.setAttribute('cy', cy.toFixed(2));
       guide.setAttribute('x1', cx.toFixed(2));
       guide.setAttribute('x2', cx.toFixed(2));
       guide.setAttribute('y1', cy.toFixed(2));
-      pts.forEach((c, i) => c.classList.toggle('is-on', i <= s.t + 1e-6));
+      pts.forEach((el, i) => el.classList.toggle('is-on', i <= s.t + 1e-6));
+      postPts.forEach((el) => el.classList.toggle('is-on', s.bias >= +el.dataset.v - 1e-6));
       fill.style.transform = `scaleX(${clamp(p, 0, 1).toFixed(4)})`;
       const idx = Math.round(s.t);
       if (idx !== lastIdx) {
@@ -659,17 +744,25 @@
       }
     }
 
-    function preload() {
-      frames.forEach((f) => {
-        const img = $('img', f);
-        if (img && img.loading === 'lazy') img.loading = 'eager';
-      });
+    /** Frames 1–5 start lazy; switch them to eager once the stage is within a viewport. Created once, outside
+        any matchMedia context (a once-trigger re-created by a breakpoint change breaks the scroll restore). */
+    function watchPreload() {
+      const lazy = frames.map((f) => $('img', f)).filter((img) => img && img.loading === 'lazy');
+      if (!lazy.length) return;
+      const go = () => lazy.forEach((img) => (img.loading = 'eager'));
+      if (!('IntersectionObserver' in window)) return go();
+      const io = new IntersectionObserver((entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        go();
+      }, { rootMargin: '100% 0px' });
+      io.observe(stage);
     }
 
     /** Motion: pin + crossfade; frame i fully visible at progress i/5. */
     function motion(isDesktop) {
+      root.classList.add('snap-live');
       line.style.strokeDasharray = String(total);
-      ScrollTrigger.create({ trigger: stage, start: 'top bottom+=100%', once: true, onEnter: preload });
       const tl = gsap.timeline({
         defaults: { ease: 'none' },
         onUpdate() {
@@ -681,31 +774,40 @@
           start: 'top top',
           end: isDesktop ? '+=250%' : '+=180%',
           scrub: 0.6,
-          anticipatePin: 1,
           refreshPriority: 1,
           invalidateOnRefresh: true,
+          // A refresh restores the scrubbed progress silently (no onUpdate): re-render the instrument.
+          onRefresh: (self) => self.animation && render(self.animation.progress()),
+          onLeave: () => render(1),
+          onLeaveBack: () => render(0),
         },
       });
+      // Each frame holds, then dissolves quickly around the midpoint of its interval (when the FRAME badge
+      // switches), so a measurement annotation is never shown double-exposed.
       frames.forEach((f, i) => {
-        if (i) tl.fromTo(f, { opacity: 0 }, { opacity: 1, duration: 1 }, i - 1);
+        if (i) tl.fromTo(f, { opacity: 0 }, { opacity: 1, duration: 0.25 }, i - 0.62);
       });
+      tl.set({}, {}, frames.length - 1); // keep the timeline length at 5 so progress i/5 ↔ frame i
       snapped = null;
       lastIdx = -1;
-      render(0);
+      render(0); // onRefresh re-renders with the restored progress
       return () => {
+        root.classList.remove('snap-live');
         line.style.strokeDasharray = '';
         line.style.strokeDashoffset = '';
       };
     }
 
-    /** Reduced motion: static grid (CSS) + fully drawn plot. */
+    /** Reduced motion / short viewports: static grid (CSS) + fully drawn plot. */
     function still() {
+      root.classList.remove('snap-live');
       line.style.strokeDasharray = '';
       line.style.strokeDashoffset = '';
       pts.forEach((c) => c.classList.add('is-on'));
+      postPts.forEach((c) => c.classList.add('is-on'));
       plot.classList.add('is-snapped');
     }
-    return { motion, still, render };
+    return { motion, still, watchPreload };
   })();
 
   /* ------------------------------------------------------------------------
@@ -885,10 +987,10 @@
       const peaks = f.peaks
         .map((w) => {
           const accent = Math.abs(w - this.ACCENT) < 0.005;
-          return `<span class="spectrum__peak${accent ? ' is-accent' : ''}" style="--x:${this.pct(w).toFixed(3)}%"><span class="spectrum__pin"></span><span class="spectrum__val">${w}</span></span>`;
+          return `<span class="spectrum__peak${accent ? ' is-accent' : ''}" style="--x:${this.pct(w).toFixed(3)}%"><span class="spectrum__pin"></span><span class="spectrum__val">${w.toFixed(2)}</span></span>`;
         })
         .join('');
-      const label = `Visible spectrum from 420 to 600 nm with the six measured photoluminescence peaks: ${f.peaks.join(', ')} nm. The 436.33 nm peak is this site’s accent colour.`;
+      const label = `Visible spectrum from 420 to 600 nm with the six measured photoluminescence peaks: ${f.peaks.map((w) => w.toFixed(2)).join(', ')} nm. The 436.33 nm peak is this site’s accent color.`;
       return `
         <section class="cs__feature container feat" aria-labelledby="feat-title" data-feature="spectrum">
           <div class="cs__section-head" data-cs-in><h3 class="feat__kicker" id="feat-title">Emission spectrum</h3><p class="feat__note">${esc(f.note)}</p></div>
@@ -903,32 +1005,71 @@
           </div>
         </section>`;
     },
-    /** Stack value labels into tiers so that no label overlaps another label or another peak's pin. */
+    /** Place every value label (tier × alignment) so that no label overlaps another label or a pin.
+        Small exhaustive search (6 peaks × ≤10 options, pruned): labels may slide beside their pin instead of
+        only climbing, tiers are capped at 2, and the accent value may be dropped (its callout below names it). */
     layout(section) {
       const track = $('.spectrum__track', section);
-      if (!track) return;
+      const box = $('.spectrum', section);
+      if (!track || !box) return;
       const W = track.clientWidth;
       const GAP = 8;
-      const placed = [];
-      $$('.spectrum__peak', section).forEach((peak) => {
+      const PIN = 7;
+      const MAX_TIER = 2;
+      const peaks = $$('.spectrum__peak', section).map((peak) => {
         const val = $('.spectrum__val', peak);
+        val.hidden = false;
         const x = (parseFloat(peak.style.getPropertyValue('--x')) / 100) * W;
-        const w = val.offsetWidth;
-        const left = clamp(x - w / 2, -4, W - w + 4);
-        const right = left + w;
-        val.style.left = `${(left - x).toFixed(1)}px`;
-        val.style.transform = 'none';
-        const clash = (t) =>
-          placed.some((p) =>
-            (p.tier === t && left < p.right + GAP && right > p.left - GAP) || // same row
-            (p.tier < t && x > p.left - 4 && x < p.right + 4) ||             // my pin crosses a lower label
-            (p.tier > t && p.x > left - 4 && p.x < right + 4)                // a taller pin crosses my label
-          );
-        let tier = 0;
-        while (clash(tier) && tier < 6) tier++;
-        placed.push({ x, left, right, tier });
-        peak.style.setProperty('--tier', tier);
+        return { peak, val, x, w: val.offsetWidth, accent: peak.classList.contains('is-accent') };
       });
+      const options = peaks.map((p) => {
+        const opts = [];
+        for (let tier = 0; tier <= MAX_TIER; tier++) {
+          [[p.x - p.w / 2, 0], [p.x - 2, 1], [p.x + 2 - p.w, 1]].forEach(([l, cost]) => {
+            const left = clamp(l, -4, W - p.w + 4);
+            opts.push({ tier, left, right: left + p.w, cost: tier * 10 + cost + Math.abs(left - l) * 0.05 });
+          });
+        }
+        if (p.accent) opts.push({ tier: 0, hidden: true, cost: 45 });
+        return opts.sort((a, b) => a.cost - b.cost);
+      });
+      const clash = (a, xa, b, xb) => {
+        if (!a.hidden && !b.hidden && a.tier === b.tier && a.left < b.right + GAP && a.right > b.left - GAP) return true; // same row
+        if (!b.hidden && a.tier > b.tier && xa > b.left - PIN && xa < b.right + PIN) return true; // a's pin crosses b's label
+        if (!a.hidden && b.tier > a.tier && xb > a.left - PIN && xb < a.right + PIN) return true; // b's pin crosses a's label
+        return false;
+      };
+      let best = null;
+      let bestCost = Infinity;
+      const pick = [];
+      const search = (i, cost) => {
+        if (cost >= bestCost) return;
+        if (i === peaks.length) {
+          best = pick.slice();
+          bestCost = cost;
+          return;
+        }
+        for (const o of options[i]) {
+          if (pick.some((q, k) => clash(o, peaks[i].x, q, peaks[k].x))) continue;
+          pick.push(o);
+          search(i + 1, cost + o.cost);
+          pick.pop();
+        }
+      };
+      search(0, 0);
+      // Fallback (never expected): everything on the lowest tier, centred.
+      if (!best) best = options.map((o) => o.find((x) => x.tier === 0 && !x.hidden));
+      let maxTier = 0;
+      peaks.forEach((p, i) => {
+        const o = best[i];
+        p.val.hidden = !!o.hidden;
+        p.val.style.left = o.hidden ? '' : `${(o.left - p.x).toFixed(1)}px`;
+        p.val.style.transform = 'none';
+        p.peak.style.setProperty('--tier', o.tier);
+        maxTier = Math.max(maxTier, o.tier);
+      });
+      // Headroom for the tallest label so values never reach into the section heading.
+      box.style.paddingTop = `${26 + maxTier * 22 + 18 + 18}px`;
     },
     mount(section, ctx) {
       this.layout(section);
@@ -1095,7 +1236,7 @@
           <defs><marker id="pipe-arrow" viewBox="0 0 8 8" refX="6.5" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 8 4 0 8z" fill="context-stroke"/></marker></defs>
           <g class="arc" data-arc="mx"><path d="M552 112 C552 66 412 66 412 106" marker-end="url(#pipe-arrow)"/><text x="482" y="70">MX</text></g>
           <g class="arc" data-arc="wx"><path d="M704 112 C704 22 388 22 388 106" marker-end="url(#pipe-arrow)"/><text x="546" y="40">WX</text></g>
-          <g class="arc" data-arc="wd"><path d="M704 228 C704 316 248 316 248 234" marker-end="url(#pipe-arrow)"/><text x="476" y="300">WD</text></g>
+          <g class="arc" data-arc="wd"><path d="M704 228 C704 316 248 316 248 234" marker-end="url(#pipe-arrow)"/><text x="476" y="318">WD</text></g>
           ${regs}${stages}${toks}
         </svg>`;
     },
@@ -1138,7 +1279,9 @@
       const step = 0.6;
       const beatLen = 0.95;
       gsap.set(toks, { x: -60, y: 175, opacity: 1 });
-      const tl = gsap.timeline({ repeat: -1, repeatDelay: 0.9, paused: true });
+      // Starts playing after a 1 s beat (delay applies once, not per repeat), so the Pause/Play control
+      // reflects tl.paused() from the very first frame.
+      const tl = gsap.timeline({ repeat: -1, repeatDelay: 0.9, delay: 1 });
       tl.set(toks, { x: -60, opacity: 1 }, 0).call(() => this.setHot(root, -1), null, 0);
       for (let b = 0; b <= 9; b++) {
         const t = 0.25 + b * beatLen;
@@ -1164,9 +1307,6 @@
           sync();
         });
       }
-      gsap.delayedCall(1.0, () => {
-        if (!ctx.dead) tl.play();
-      });
       sync();
     },
   };
@@ -1208,7 +1348,19 @@
       const m = /^#project\/([\w-]+)$/.exec(location.hash);
       return m ? m[1] : null;
     };
-    const galleryIds = (p) => p.images.filter((id) => id !== p.cover && !['sem', 'afm'].includes(Img.get(id)?.group));
+    const SPAN_AR = 2.5;
+    const isSpan = (id) => {
+      const im = Img.get(id);
+      return !!im && im.width / im.height > SPAN_AR;
+    };
+    // Gallery: everything but the cover and the detector tiles; for the detector project also the 3×3 grids,
+    // which the detector already presents. Ultra-wide figures come first: they span all columns, and the
+    // lightbox order (built from the same list) stays in sync with the page.
+    const galleryIds = (p) => {
+      const detector = p.feature && p.feature.type === 'detector';
+      const ids = p.images.filter((id) => id !== p.cover && !['sem', 'afm'].includes(Img.get(id)?.group) && !(detector && /-grid$/.test(id)));
+      return [...ids.filter(isSpan), ...ids.filter((id) => !isSpan(id))];
+    };
 
     /* ---------- Render ---------- */
     function heroHTML(p) {
@@ -1223,7 +1375,7 @@
       return `
         <figure class="cs__hero container${tall ? ' cs__hero--tall' : ''}" data-cs-hero style="--ar:${ar.toFixed(4)}">
           <button class="cs__hero-btn" type="button" data-lb-open="0" aria-label="Enlarge figure: ${esc(im.alt)}">
-            <span class="cs__hero-frame mat--${im.kind}" data-flip-id="cover-${p.id}">
+            <span class="cs__hero-frame mat--${im.kind}${COVER_MAT[p.id] ? ' mat--' + COVER_MAT[p.id] : ''}" data-flip-id="cover-${p.id}">
               <img src="${base.src}" width="${base.w}" height="${base.h}" alt="${esc(im.alt)}" decoding="async" data-asset="${p.cover}" data-hires-sizes="${sizes}"${COVER_POS[p.id] ? ` style="--pos:${COVER_POS[p.id]}"` : ''}>
               <span class="cs__hero-zoom">${icon('zoom')}</span>
             </span>
@@ -1239,7 +1391,8 @@
         ? `<span class="metric__num" data-count="${esc(m.value)}"><span class="sr-only">${esc(m.value)}</span><span class="metric__ghost" aria-hidden="true">${esc(m.value)}</span><span class="metric__live" aria-hidden="true">${esc(m.value)}</span></span>`
         : `<span class="metric__num">${rich(m.value)}${joined ? `<span class="metric__suffix">${esc(m.unit)}</span>` : ''}</span>`;
       const unit = m.unit && !joined ? `<span class="metric__unit">${esc(m.unit)}</span>` : '';
-      return `<div class="metric" data-cs-in><p class="metric__value">${num}${unit}</p><p class="metric__label">${esc(m.label)}</p></div>`;
+      const label = nbspUnits(esc(m.label)).replace(/→/g, ARROW_GLYPH + '<span class="sr-only"> to </span>');
+      return `<div class="metric" data-cs-in><p class="metric__value">${num}${unit}</p><p class="metric__label">${label}</p></div>`;
     }
 
     function featureHTML(p) {
@@ -1258,10 +1411,12 @@
     function figureHTML(id, index) {
       const im = Img.get(id);
       if (!im) return '';
+      const span = isSpan(id);
+      const sizes = span ? '(min-width: 1500px) 1400px, 94vw' : '(min-width: 1100px) 30vw, (min-width: 640px) 46vw, 100vw';
       return `
-        <figure class="fig fig--${im.kind}" data-cs-fig>
+        <figure class="fig fig--${im.kind}${span ? ' fig--span' : ''}" data-cs-fig>
           <button class="fig__btn" type="button" data-lb-open="${index}" aria-label="Enlarge figure: ${esc(im.alt)}">
-            <span class="fig__mat">${Img.html(id, { sizes: '(min-width: 1100px) 30vw, (min-width: 640px) 46vw, 100vw' })}</span>
+            <span class="fig__mat">${Img.html(id, { sizes })}</span>
           </button>
           <figcaption>${esc(im.caption)}<span class="fig__id">${esc(id)}</span></figcaption>
         </figure>`;
@@ -1291,7 +1446,14 @@
     }
 
     function render(p) {
-      const withLine = p.withNote ? esc(p.withNote) : p.with.length ? `With <b>${p.with.map(esc).join(', ')}</b>` : '';
+      let withLine = '';
+      if (p.withNote) {
+        withLine = esc(p.withNote);
+        p.with.forEach((n) => {
+          const e = esc(n);
+          withLine = withLine.split(e).join(`<b>${e}</b>`);
+        });
+      } else if (p.with.length) withLine = `With <b>${p.with.map(esc).join(', ')}</b>`;
       const gallery = galleryIds(p);
       lbItems = [p.cover, ...gallery].filter(Boolean);
       return `
@@ -1328,7 +1490,7 @@
 
     /** Runs once content is in place and visible: features, reading progress, gallery reveals, hi-res hero. */
     function activate(p) {
-      if (!ctx) return;
+      if (!ctx || s.closing || !s.open) return;
       const motion = !reduced();
       if (motion) {
         const pr = gsap.fromTo(progress, { scaleX: 0 }, { scaleX: 1, ease: 'none', scrollTrigger: { scroller, trigger: content, start: 'top top', end: 'bottom bottom', scrub: true } });
@@ -1433,7 +1595,8 @@
       }
       if (Nav.menuOpen) Nav.closeMenu({ restoreFocus: false });
       const card = from || Work.cardFor(id);
-      s = { open: true, closing: false, id, source: card, returnFocus: from || card || doc.activeElement };
+      const active = doc.activeElement && doc.activeElement !== doc.body ? doc.activeElement : null;
+      s = { open: true, closing: false, id, source: card, returnFocus: from || (card && Work.isShown(card) ? card : null) || active };
       if (push) history.pushState({ case: id }, '', `#project/${id}`);
 
       mount(p);
@@ -1444,6 +1607,10 @@
       createInnerLenis();
       scrollTop();
       $('#case-title', content)?.focus({ preventScroll: true });
+      // A double-click's second click lands on the overlay: keep focus on the heading, not <body>.
+      requestAnimationFrame(() => {
+        if (s.open && !el.contains(doc.activeElement)) $('#case-title', content)?.focus({ preventScroll: true });
+      });
 
       const media = card ? $('.card__media', card) : null;
       const target = $('[data-flip-id]', content);
@@ -1548,7 +1715,11 @@
         HUD.show();
         const focusTarget = usable ? card : s.returnFocus;
         s = { open: false, closing: false, id: null, source: null, returnFocus: null };
-        if (focusTarget && focusTarget.isConnected) focusTarget.focus({ preventScroll: true });
+        // Lenis must agree with the real scroll position before anything else scrolls.
+        Smooth.sync();
+        const focusable = focusTarget && focusTarget.isConnected && focusTarget.getClientRects().length;
+        if (focusable) focusTarget.focus({ preventScroll: true });
+        else focusQuietly($('#work-title') || $('#work'));
         if (HAS_GSAP) ScrollTrigger.update();
         const next = afterClose;
         afterClose = null;
@@ -1627,6 +1798,11 @@
     function boot() {
       const id = parseHash();
       if (!id || !BY_ID[id]) return;
+      // Give the deep link a base entry below it, so browser Back closes the case study and stays on the site.
+      if (!(history.state && history.state.case)) {
+        history.replaceState(null, '', location.pathname + location.search);
+        history.pushState({ case: id }, '', `#project/${id}`);
+      }
       Smooth.scrollTo('#work', { immediate: true });
       open(id, { push: false, flip: false });
     }
@@ -1652,20 +1828,24 @@
     const counter = $('[data-lb-counter]', el);
     const caption = $('[data-lb-caption]', el);
     const asset = $('[data-lb-asset]', el);
+    const live = $('[data-lb-live]', el);
     const prevBtn = $('[data-lb-prev]', el);
     const nextBtn = $('[data-lb-next]', el);
     const closeBtn = $('[data-lb-close]', el);
     const backdrop = $('.lb__backdrop', el);
     const info = $('.lb__info', el);
 
+    const TAP_ZOOM = 2;
+    const MAX_ZOOM = 4;
     let items = [];
     let index = 0;
     let opener = null;
     let isOpen = false;
-    let zoomed = false;
+    let scale = 1;
     let token = 0;
     const pan = { x: 0, y: 0 };
     const modal = { el, close: () => close() };
+    const zoomed = () => scale > 1.001;
 
     /** The image the user actually sees inside an opener (detector tiles stack SEM + AFM). */
     const thumbOf = (node) => {
@@ -1675,15 +1855,29 @@
       return $('img', node);
     };
 
+    /** Pan limits: the scaled image may not leave the frame. */
+    function clampPan() {
+      const r = zoomBtn.getBoundingClientRect();
+      const mx = (r.width * (scale - 1)) / 2;
+      const my = (r.height * (scale - 1)) / 2;
+      pan.x = clamp(pan.x, -mx, mx);
+      pan.y = clamp(pan.y, -my, my);
+    }
+    function apply(duration = 0) {
+      if (HAS_GSAP) gsap.to(img, { scale, x: pan.x, y: pan.y, duration: reduced() ? 0 : duration, ease: EASE, overwrite: true });
+      else img.style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${scale})`;
+    }
+    function syncPressed() {
+      zoomBtn.setAttribute('aria-pressed', String(zoomed()));
+    }
+
     function setZoom(on, e) {
-      zoomed = on;
-      zoomBtn.setAttribute('aria-pressed', String(on));
-      zoomBtn.setAttribute('aria-label', on ? 'Zoom out' : 'Zoom image');
+      scale = on ? TAP_ZOOM : 1;
       pan.x = 0;
       pan.y = 0;
+      syncPressed();
       if (on && e && e.pointerType === 'mouse') panTo(e, true);
-      else if (HAS_GSAP) gsap.to(img, { scale: on ? 2 : 1, x: 0, y: 0, duration: reduced() ? 0 : 0.5, ease: EASE, overwrite: true });
-      else img.style.transform = on ? 'scale(2)' : '';
+      else apply(0.5);
     }
 
     /** Mouse: the point under the cursor stays in view while zoomed. */
@@ -1691,9 +1885,9 @@
       const r = zoomBtn.getBoundingClientRect();
       const rx = clamp((e.clientX - r.left) / r.width, 0, 1);
       const ry = clamp((e.clientY - r.top) / r.height, 0, 1);
-      pan.x = (0.5 - rx) * r.width;
-      pan.y = (0.5 - ry) * r.height;
-      if (HAS_GSAP) gsap.to(img, { scale: 2, x: pan.x, y: pan.y, duration: animate && !reduced() ? 0.5 : 0.25, ease: EASE, overwrite: true });
+      pan.x = (0.5 - rx) * r.width * (scale - 1);
+      pan.y = (0.5 - ry) * r.height * (scale - 1);
+      apply(animate ? 0.5 : 0.25);
     }
 
     function update(dir = 0, from = null) {
@@ -1706,6 +1900,8 @@
       img.alt = im.alt;
       img.width = big.w;
       img.height = big.h;
+      // Small sources (the 342 px detector tiles) get a bounded upscale, so "Enlarge" really enlarges.
+      img.style.width = big.w < 600 ? `min(${Math.round(Math.min(2, (0.78 * innerHeight) / big.h) * big.w)}px, 92vw)` : '';
       img.dataset.asset = id;
       img.src = thumb && thumb.currentSrc ? thumb.currentSrc : Img.pick(id).src;
       Img.preload(big.src).then(() => {
@@ -1714,6 +1910,9 @@
       counter.textContent = `${pad2(index + 1)} / ${pad2(items.length)}`;
       caption.textContent = im.caption;
       asset.textContent = id;
+      zoomBtn.setAttribute('aria-label', `Zoom: ${im.alt}`);
+      // On open the focused button and aria-describedby already speak; announce only prev/next changes.
+      if (live) live.textContent = dir ? `${im.caption} Figure ${index + 1} of ${items.length}.` : '';
       const single = items.length < 2;
       prevBtn.hidden = single;
       nextBtn.hidden = single;
@@ -1768,13 +1967,17 @@
       if (!isOpen) return;
       isOpen = false;
       token++;
+      // Leave the modal stack right away: a second ESC during the fade belongs to the dialog below.
+      Modal.remove(modal);
+      if (live) live.textContent = '';
       const back = opener;
       const finish = () => {
         el.hidden = true;
         el.classList.remove('is-flipping');
         if (HAS_GSAP) gsap.set([img, backdrop, info, prevBtn, nextBtn, closeBtn], { clearProps: 'all' });
+        else img.style.transform = '';
+        img.style.width = '';
         img.removeAttribute('src');
-        Modal.remove(modal);
         ScrollLock.unlock();
         if (back && back.isConnected && !instant) back.focus({ preventScroll: true });
       };
@@ -1811,17 +2014,53 @@
         }
       });
 
-      // Pointer: swipe to navigate, click to zoom, mouse-follow / drag to pan.
-      let down = null;
+      // Pointer: one finger swipes (unzoomed) or drags (zoomed); two fingers pinch-zoom around their midpoint;
+      // a click/tap toggles 2× zoom; a mouse pans by following the cursor.
+      const pointers = new Map();
+      let down = null; // single-pointer gesture
+      let pinch = null; // two-pointer gesture
+      let pinched = false; // any pinch in the current gesture: no swipe, no click-zoom
       let moved = false;
+      const startDrag = (p, id) => {
+        down = { x: p.x, y: p.y, px: pan.x, py: pan.y, id };
+      };
+      const startPinch = () => {
+        const [a, b] = [...pointers.values()];
+        const r = zoomBtn.getBoundingClientRect();
+        const c = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+        // Image-local point under the pinch midpoint (transform-origin is the image centre).
+        pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, s0: scale, c, q: { x: (mid.x - c.x - pan.x) / scale, y: (mid.y - c.y - pan.y) / scale } };
+        pinched = true;
+        moved = true;
+        down = null;
+      };
+
       stage.addEventListener('pointerdown', (e) => {
         if (!isOpen || (e.pointerType === 'mouse' && e.button !== 0)) return;
-        down = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y, id: e.pointerId };
-        moved = false;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointers.size === 1) {
+          pinched = false;
+          moved = false;
+          startDrag({ x: e.clientX, y: e.clientY }, e.pointerId);
+        } else if (pointers.size === 2) startPinch();
       });
       stage.addEventListener('pointermove', (e) => {
         if (!isOpen) return;
-        if (zoomed && e.pointerType === 'mouse') {
+        if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pinch && pointers.size >= 2) {
+          const [a, b] = [...pointers.values()];
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+          scale = clamp((pinch.s0 * d) / pinch.d0, 1, MAX_ZOOM);
+          pan.x = mid.x - pinch.c.x - scale * pinch.q.x;
+          pan.y = mid.y - pinch.c.y - scale * pinch.q.y;
+          clampPan();
+          syncPressed();
+          apply(0);
+          return;
+        }
+        if (zoomed() && e.pointerType === 'mouse') {
           panTo(e, false);
           return;
         }
@@ -1829,28 +2068,41 @@
         const dx = e.clientX - down.x;
         const dy = e.clientY - down.y;
         if (Math.hypot(dx, dy) > 8) moved = true;
-        if (zoomed) {
-          const r = zoomBtn.getBoundingClientRect();
-          pan.x = clamp(down.px + dx, -r.width / 2, r.width / 2);
-          pan.y = clamp(down.py + dy, -r.height / 2, r.height / 2);
-          gsap.set(img, { x: pan.x, y: pan.y });
+        if (zoomed()) {
+          pan.x = down.px + dx;
+          pan.y = down.py + dy;
+          clampPan();
+          apply(0);
         }
       });
       const end = (e) => {
-        if (!down || e.pointerId !== down.id) return;
-        const dx = e.clientX - down.x;
-        const dy = e.clientY - down.y;
-        if (!zoomed && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
-        down = null;
+        if (!pointers.has(e.pointerId)) return;
+        pointers.delete(e.pointerId);
+        if (pinch) {
+          if (pointers.size < 2) {
+            pinch = null;
+            if (scale <= 1.05) setZoom(false);
+            // The finger that stays down continues as a drag.
+            const rest = [...pointers.entries()][0];
+            if (rest) startDrag(rest[1], rest[0]);
+          }
+          return;
+        }
+        if (down && e.pointerId === down.id) {
+          const dx = e.clientX - down.x;
+          const dy = e.clientY - down.y;
+          if (!pinched && !zoomed() && e.type === 'pointerup' && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+          down = null;
+        }
       };
       stage.addEventListener('pointerup', end);
-      stage.addEventListener('pointercancel', () => (down = null));
+      stage.addEventListener('pointercancel', end);
       zoomBtn.addEventListener('click', (e) => {
-        if (moved) {
+        if (moved || pinched) {
           moved = false;
           return;
         }
-        setZoom(!zoomed, e);
+        setZoom(!zoomed(), e);
       });
       // Clicking the empty stage (outside the image) closes.
       stage.addEventListener('click', (e) => {
@@ -1891,16 +2143,27 @@
 
     function triggers() {
       if (!HAS_GSAP || !nav) return;
+      const pageY = () => (Smooth.lenis ? Smooth.lenis.scroll : window.scrollY);
+      let lastY = pageY();
       ScrollTrigger.create({
         start: 0,
         end: 'max',
         onUpdate(self) {
+          // During refresh ScrollTrigger briefly measures at scroll 0: never derive nav state from that.
+          if (ScrollTrigger.isRefreshing) return;
           const y = self.scroll();
+          const dy = y - lastY;
+          lastY = y;
           nav.classList.toggle('is-scrolled', y > 24);
-          if (reduced() || menuOpen || Modal.isOpen) return show();
-          if (y < 160 || self.direction < 0) show();
-          else hide();
+          if (reduced() || menuOpen || Modal.isOpen || Smooth.programmatic) return show();
+          if (y < 160 || dy < 0) show();
+          else if (dy > 0) hide();
         },
+      });
+      // After any refresh, restore the backdrop from the real position (keeps the current shown/hidden state).
+      ScrollTrigger.addEventListener('refresh', () => {
+        lastY = pageY();
+        nav.classList.toggle('is-scrolled', lastY > 24);
       });
       [['#about', 'about'], ['#experience', 'experience'], ['#snap-in', 'work'], ['#work', 'work'], ['#contact', 'contact']].forEach(([sel, id]) => {
         if (!$(sel)) return;
@@ -2061,11 +2324,79 @@
     });
   }
 
+  /** Keep the reader's place across viewport changes (rotation, breakpoint, pin added/removed): track which
+      section is at the top and how far into it, from geometry cached at each refresh (no layout reads while
+      scrolling); after a size change, the next refresh puts the same point of the same section back on top. */
+  function keepReadingPosition() {
+    const sections = $$('#main > section');
+    if (!sections.length) return;
+    let tops = [];
+    let anchor = null;
+    let frozen = false;
+    let freezeTimer = 0;
+    let size = [innerWidth, innerHeight];
+    const y = () => (Smooth.lenis ? Smooth.lenis.scroll : window.scrollY);
+    const measure = () => {
+      tops = sections.map((s) => {
+        const r = s.getBoundingClientRect();
+        return { top: r.top + window.scrollY, h: Math.max(1, r.height) };
+      });
+    };
+    const track = () => {
+      if (frozen || !tops.length || ScrollTrigger.isRefreshing || Modal.isOpen) return;
+      const cur = y();
+      let i = tops.length - 1;
+      while (i > 0 && tops[i].top > cur) i--;
+      anchor = { i, frac: clamp((cur - tops[i].top) / tops[i].h, 0, 1) };
+    };
+    ScrollTrigger.addEventListener('refresh', () => {
+      measure();
+      if (frozen && anchor && !Modal.isOpen) {
+        const t = tops[anchor.i];
+        const target = Math.round(t.top + anchor.frac * t.h);
+        if (Math.abs(target - window.scrollY) > 2) {
+          window.scrollTo(0, target);
+          Smooth.sync();
+          ScrollTrigger.update();
+        }
+        clearTimeout(freezeTimer);
+        freezeTimer = setTimeout(() => (frozen = false), 900); // follow-up refreshes (resize, matchMedia) re-land on the same anchor
+        return;
+      }
+      track();
+    });
+    ScrollTrigger.addEventListener('scrollEnd', track);
+    window.addEventListener('resize', () => {
+      const [w, h] = size;
+      size = [innerWidth, innerHeight];
+      // Ignore mobile toolbar show/hide (small height-only changes).
+      if (w === innerWidth && Math.abs(h - innerHeight) < 120) return;
+      frozen = true;
+      clearTimeout(freezeTimer);
+      freezeTimer = setTimeout(() => (frozen = false), 2500); // safety: never stay frozen
+    }, { passive: true });
+    measure();
+    track();
+  }
+
   function boot() {
     if (!DATA || !HAS_GSAP) {
       // Content is static HTML; without the libraries just make sure nothing stays hidden.
       root.classList.remove('motion-ok');
       window.__siteBooted = true;
+      window.__introStarted = true;
+      // Without GSAP the HUD can't follow the sections: hide it rather than show stale readings.
+      if (HUD.el) HUD.el.classList.add('is-hidden');
+      const nav = $('#nav');
+      if (nav) {
+        let raf = 0;
+        const paint = () => {
+          raf = 0;
+          nav.classList.toggle('is-scrolled', window.scrollY > 24);
+        };
+        window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(paint); }, { passive: true });
+        paint();
+      }
       if (DATA) {
         run('work', Work.init);
         run('case', CaseStudy.init);
@@ -2091,10 +2422,17 @@
     const mm = gsap.matchMedia();
     // Breakpoint-dependent pinning/scrubbing (created first: it is highest on the page that pins).
     mm.add(
-      { motionOK: '(prefers-reduced-motion: no-preference)', reduce: '(prefers-reduced-motion: reduce)', desktop: '(min-width: 760px)', mobile: '(max-width: 759px)' },
+      {
+        motionOK: '(prefers-reduced-motion: no-preference)',
+        reduce: '(prefers-reduced-motion: reduce)',
+        desktop: '(min-width: 760px)',
+        mobile: '(max-width: 759px)',
+        short: '(max-height: 520px)',
+      },
       (c) => {
-        const { motionOK, desktop } = c.conditions;
-        if (!motionOK) {
+        const { motionOK, desktop, short } = c.conditions;
+        // Landscape phones can't fit a pinned stage: show the static frame grid instead.
+        if (!motionOK || short) {
           run('sweep:still', Sweep.still);
           return undefined;
         }
@@ -2106,10 +2444,8 @@
     // Motion-only effects.
     mm.add({ motionOK: '(prefers-reduced-motion: no-preference)', reduce: '(prefers-reduced-motion: reduce)' }, (c) => {
       root.classList.toggle('motion-ok', !!c.conditions.motionOK);
-      if (!c.conditions.motionOK) {
-        Hero.reveal();
-        return undefined;
-      }
+      if (!c.conditions.motionOK || window.__introSkipped) Hero.reveal();
+      if (!c.conditions.motionOK) return undefined;
       run('hero:scrub', Hero.scrub);
       run('about', About.motion);
       run('timeline', Timeline.motion);
@@ -2136,12 +2472,17 @@
     };
     window.__siteBooted = true;
 
-    const fontsReady = doc.fonts && doc.fonts.ready ? doc.fonts.ready : Promise.resolve();
+    // The intro waits for the two faces it splits (Sora name, Inter lede), never for every font, and never
+    // longer than 800 ms: a slow mono font must not leave the hero blank. ScrollTrigger refreshes itself on load.
+    const load = (f) => (doc.fonts && doc.fonts.load ? doc.fonts.load(f).catch(() => {}) : Promise.resolve());
+    const fontsReady = Promise.race([Promise.all([load('750 1em Sora'), load('400 1em Inter')]), new Promise((r) => setTimeout(r, 800))]);
     fontsReady.then(() => {
-      run('hero:intro', Hero.intro);
+      if (run('hero:intro', () => (Hero.intro(), true)) !== true) Hero.reveal();
       ScrollTrigger.refresh();
     });
-    window.addEventListener('load', () => ScrollTrigger.refresh());
+    if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(() => ScrollTrigger.refresh());
+    run('sweep:preload', Sweep.watchPreload);
+    run('reading-position', keepReadingPosition);
     run('lazy-refresh', watchLazyImages);
     run('router', CaseStudy.boot);
   }
