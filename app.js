@@ -63,7 +63,7 @@
   // 'wide' = crop a very wide tool screenshot (cover); 'figure' = labelled figure plate on a white mat (contain).
   const COVER_MAT = { tia: 'wide', dsa: 'figure' };
   /** Keep a number and its unit on one line ("20 nm", "0.9 mL"). */
-  const nbspUnits = (html) => html.replace(/(\d)\s(?=(?:nm|µm|mm|m|V|mV|kV|mL|Hz|kHz|MHz|GHz|ps|ns|s|min|°C|kΩ|Ω|dB|%)(?![\w]))/g, '$1&nbsp;');
+  const nbspUnits = (html) => html.replace(/(\d)\s(?=(?:nm|µm|mm|m|cm|V|mV|kV|mL|Hz|kHz|MHz|GHz|ps|ns|s|min|°C|kΩ|Ω|dB|dBΩ|mW|µW|nA|µA|fF|%)(?![\w]))/g, '$1&nbsp;');
 
   const PROJECTS = DATA ? DATA.projects.slice().sort((a, b) => a.order - b.order) : [];
   const BY_ID = Object.fromEntries(PROJECTS.map((p) => [p.id, p]));
@@ -1380,7 +1380,7 @@
               <span class="cs__hero-zoom">${icon('zoom')}</span>
             </span>
           </button>
-          <figcaption class="cs__hero-cap" data-cs-in>${esc(im.caption)}<span class="fig__id">${esc(p.cover)}</span></figcaption>
+          <figcaption class="cs__hero-cap" data-cs-in>${nbspUnits(esc(im.caption))}<span class="fig__id">${esc(p.cover)}</span></figcaption>
         </figure>`;
     }
 
@@ -1418,7 +1418,7 @@
           <button class="fig__btn" type="button" data-lb-open="${index}" aria-label="Enlarge figure: ${esc(im.alt)}">
             <span class="fig__mat">${Img.html(id, { sizes })}</span>
           </button>
-          <figcaption>${esc(im.caption)}<span class="fig__id">${esc(id)}</span></figcaption>
+          <figcaption>${nbspUnits(esc(im.caption))}<span class="fig__id">${esc(id)}</span></figcaption>
         </figure>`;
     }
 
@@ -1462,7 +1462,7 @@
             <div class="cs__head-main">
               <p class="cs__kicker" data-cs-in>Project <b>${pad2(p.order)}</b> / ${pad2(PROJECTS.length)} · ${esc(p.course)}</p>
               <h2 class="cs__title" id="case-title" tabindex="-1" data-cs-in>${esc(p.title)}</h2>
-              <p class="cs__subtitle" data-cs-in>${esc(p.subtitle)}</p>
+              <p class="cs__subtitle" data-cs-in>${nbspUnits(esc(p.subtitle))}</p>
             </div>
             <div class="cs__facts" data-cs-in>
               <p class="scale-chip"><span class="scale-chip__v">${esc(p.scale.value)}</span><span class="scale-chip__l">${esc(p.scale.label)}</span><span class="scale-chip__m">${rich(p.scale.mag)}${p.scale.mag.toLowerCase() === p.category ? '' : ` · ${CATEGORY[p.category]}`}</span></p>
@@ -1472,8 +1472,8 @@
           ${heroHTML(p)}
           <section class="container" aria-label="Key results"><div class="cs__metrics" style="--n:${p.metrics.length}">${p.metrics.map(metricHTML).join('')}</div></section>
           <section class="cs__text container" aria-label="Overview">
-            <p class="cs__lead" data-cs-in>${esc(p.summary)}</p>
-            <div class="cs__body" data-cs-in>${p.body.map((b) => `<p>${esc(b)}</p>`).join('')}</div>
+            <p class="cs__lead" data-cs-in>${nbspUnits(esc(p.summary))}</p>
+            <div class="cs__body" data-cs-in>${p.body.map((b) => `<p>${nbspUnits(esc(b))}</p>`).join('')}</div>
           </section>
           ${featureHTML(p)}
           ${galleryHTML(gallery, 1)}
@@ -1908,7 +1908,7 @@
         if (my === token && isOpen) img.src = big.src;
       });
       counter.textContent = `${pad2(index + 1)} / ${pad2(items.length)}`;
-      caption.textContent = im.caption;
+      caption.textContent = im.caption.replace(/(\d) (?=(?:nm|µm|V|mL|Hz|kHz|MHz|GHz|ps|s|min|mW|µW|nA|fF|kΩ|dB)\b)/g, '$1\u00a0');
       asset.textContent = id;
       zoomBtn.setAttribute('aria-label', `Zoom: ${im.alt}`);
       // On open the focused button and aria-describedby already speak; announce only prev/next changes.
