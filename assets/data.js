@@ -1,4 +1,4 @@
-/* Generated content + image manifest. Numbers sourced from the project reports. */
+/* Site content and image manifest. Numbers sourced from the project reports. */
 window.SITE_DATA = {
  "images": {
   "qd-uv": {
