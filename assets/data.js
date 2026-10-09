@@ -1479,12 +1479,12 @@ window.SITE_DATA = {
     {
      "w": 640,
      "h": 640,
-     "src": "assets/img/photos/headshot-river-640.webp"
+     "src": "assets/img/photos/headshot-lake-640.webp"
     },
     {
      "w": 1200,
      "h": 1200,
-     "src": "assets/img/photos/headshot-river-663.webp"
+     "src": "assets/img/photos/headshot-lake-900.webp"
     }
    ]
   },
